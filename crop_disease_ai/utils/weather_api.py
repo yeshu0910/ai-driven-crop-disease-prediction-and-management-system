@@ -1,5 +1,4 @@
 import requests
-import json
 import logging
 from datetime import datetime, timedelta
 from utils.config import OPENWEATHER_API_KEY, WEATHER_API_BASE_URL
@@ -15,6 +14,8 @@ class WeatherAPI:
         return bool(self.api_key)
 
     def get_current_weather(self, location):
+        if not location or not location.strip():
+            return self._mock_weather("Default Location")
         if not self.is_configured():
             return self._mock_weather(location)
         try:
@@ -37,6 +38,8 @@ class WeatherAPI:
             return self._mock_weather(location)
 
     def get_forecast(self, location, days=7):
+        if not location or not location.strip():
+            return self._mock_forecast("Default Location", days)
         if not self.is_configured():
             return self._mock_forecast(location, days)
         try:
@@ -59,7 +62,9 @@ class WeatherAPI:
             return self._mock_forecast(location, days)
 
     def _is_city_name(self, location):
-        return not any(c.isdigit() for c in location) or "," not in location
+        if not location:
+            return True
+        return "," not in location or not any(c.isdigit() for c in location.split(",")[0])
 
     def _parse_current_weather(self, data):
         return {
@@ -86,13 +91,8 @@ class WeatherAPI:
             date_key = dt.strftime("%Y-%m-%d")
             if date_key not in daily_data:
                 daily_data[date_key] = {
-                    "date": date_key,
-                    "temps": [],
-                    "humidities": [],
-                    "wind_speeds": [],
-                    "pressures": [],
-                    "descriptions": [],
-                    "weather_icons": []
+                    "date": date_key, "temps": [], "humidities": [],
+                    "wind_speeds": [], "pressures": [], "descriptions": [], "weather_icons": []
                 }
             daily_data[date_key]["temps"].append(item["main"]["temp"])
             daily_data[date_key]["humidities"].append(item["main"]["humidity"])
@@ -112,13 +112,13 @@ class WeatherAPI:
                 "wind_speed_avg": sum(dd["wind_speeds"]) / len(dd["wind_speeds"]),
                 "pressure_avg": sum(dd["pressures"]) / len(dd["pressures"]),
                 "description": max(set(dd["descriptions"]), key=dd["descriptions"].count),
-                "weather_icon": dd["weather_icons"][len(dd["weather_icons"]) // 2]
+                "weather_icon": dd["weather_icons"][len(dd["weather_icons"]) // 2] if dd["weather_icons"] else "01d"
             })
         return {"forecasts": forecasts, "location": data["city"]["name"], "source": "api"}
 
     def _mock_weather(self, location):
         import random
-        random.seed(hash(location) % (2 ** 32))
+        random.seed(hash(location or "Default") % (2 ** 32))
         return {
             "location": location if self._is_city_name(location) else "Farm Location",
             "temperature": round(28 + random.random() * 12, 1),
@@ -128,20 +128,18 @@ class WeatherAPI:
             "wind_speed": round(2 + random.random() * 8, 1),
             "weather_description": random.choice([
                 "clear sky", "few clouds", "scattered clouds",
-                "broken clouds", "light rain", "moderate rain",
-                "overcast clouds"
+                "broken clouds", "light rain", "moderate rain", "overcast clouds"
             ]),
             "weather_icon": "01d",
             "clouds": round(random.random() * 100, 1),
-            "lat": 0,
-            "lon": 0,
+            "lat": 0, "lon": 0,
             "timestamp": datetime.now().isoformat(),
             "source": "mock"
         }
 
     def _mock_forecast(self, location, days):
         import random
-        random.seed(hash(location) % (2 ** 32))
+        random.seed(hash(location or "Default") % (2 ** 32))
         forecasts = []
         base_temp = 28 + random.random() * 8
         for i in range(days):
@@ -156,8 +154,7 @@ class WeatherAPI:
                 "wind_speed_avg": round(2 + random.random() * 6, 1),
                 "pressure_avg": round(1005 + random.random() * 20, 1),
                 "description": random.choice([
-                    "clear sky", "few clouds", "scattered clouds",
-                    "broken clouds", "light rain"
+                    "clear sky", "few clouds", "scattered clouds", "broken clouds", "light rain"
                 ]),
                 "weather_icon": "01d"
             })
@@ -166,7 +163,6 @@ class WeatherAPI:
     def get_disease_risk_from_weather(self, weather_data, crop_name):
         risk_score = 0
         risk_factors = []
-
         humidity = weather_data.get("humidity", 50)
         temperature = weather_data.get("temperature", 25)
         wind_speed = weather_data.get("wind_speed", 5)
