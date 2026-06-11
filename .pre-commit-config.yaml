@@ -19,6 +19,38 @@ repos:
         args: ["-r", "src/"]
         exclude: ^tests/
 
+  - repo: https://github.com/jendrikseipps/vulture
+    rev: v2.10
+    hooks:
+      - id: vulture
+        args: ["src/", "tests/"]
+
+  - repo: https://github.com/pre-commit/mirrors-pylint
+    rev: v3.0.3
+    hooks:
+      - id: pylint
+        additional_dependencies: ["tomli", "fastapi>=0.100.0", "sqlalchemy>=2.0.0", "pydantic>=2.0.0"]
+        exclude: ^tests/
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: ["flake8-bugbear"]
+        exclude: ^tests/
+
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.50.0
+    hooks:
+      - id: semgrep
+        args: ["--config=auto", "--error"]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.2
+    hooks:
+      - id: pyupgrade
+        args: ["--py311-plus"]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev --group ml
+      - run: uv run ruff check .
+
+  typecheck-mypy:
+    name: Mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run mypy src/
+
+  security-bandit:
+    name: Bandit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run bandit -r src/ -f json -o bandit-report.json || true
+      - run: uv run bandit -r src/
+
+  dead-code-vulture:
+    name: Vulture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run vulture src/ tests/ --min-confidence 80
+
+  lint-pylint:
+    name: Pylint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run pylint src/
+
+  lint-flake8:
+    name: Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run flake8 src/
+
+  security-semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: uv run semgrep --config=auto --error src/
+
+  upgrade-pyupgrade:
+    name: Pyupgrade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev
+      - run: |
+          uv run pyupgrade --py311-plus src tests
+          if [ -n "$(git diff)" ]; then
+            echo "::error::Run 'pyupgrade --py311-plus src tests' to fix."
+            git diff --stat
+            exit 1
+          fi
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    needs: [lint-ruff, typecheck-mypy, security-bandit, dead-code-vulture, lint-pylint, lint-flake8, security-semgrep]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - run: uv sync --frozen --group dev --group ml
+      - run: uv run pytest --cov=src --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 14

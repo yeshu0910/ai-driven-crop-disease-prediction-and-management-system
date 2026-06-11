@@ -1,55 +1,25 @@
 # Feature Specification Template
 
-## Feature ID
-[FEAT-XXX]
+## Feature Overview
+<!-- One-paragraph summary of the feature, its purpose, and scope. -->
 
-## Title
-[Feature title]
-
-## Status
-[Proposed | In Progress | Completed]
-
-## Overview
-[Brief description of the feature]
-
-## Motivation
-[Why this feature is needed, what problem it solves]
+## Problem Statement
+<!-- Describe the problem this feature solves. Include user pain points and business impact. -->
 
 ## User Stories
+<!-- As a [role], I want [feature] so that [benefit]. -->
 
-### As a [user type]
-I want [feature]
-So that [benefit]
+## Functional Requirements
+<!-- Detailed list of what the system must do. -->
 
-## Requirements
-
-### Functional Requirements
-1. [FR-1: Requirement description]
-2. [FR-2: Requirement description]
-
-### Non-Functional Requirements
-1. [NFR-1: Performance, security, usability requirements]
-2. [NFR-2: Performance, security, usability requirements]
-
-## Dependencies
-- [External dependencies]
-- [Internal dependencies]
+## Non-Functional Requirements
+<!-- Performance, security, scalability, and reliability requirements. -->
 
 ## Acceptance Criteria
-- [ ] [Criterion 1]
-- [ ] [Criterion 2]
+<!-- Explicit pass/fail criteria for validating the feature. -->
+
+## Dependencies
+<!-- Internal and external dependencies required before implementation. -->
 
 ## Out of Scope
-- [Items explicitly not included]
-
-## Related Documentation
-- [Links to related specs, designs, or documents]
-
-## Metadata
-
-| Field | Value |
-|-------|-------|
-| Author | [Name] |
-| Created Date | [YYYY-MM-DD] |
-| Last Updated | [YYYY-MM-DD] |
-| Estimated Effort | [S/M/L/XL] |
+<!-- Explicitly list what is NOT included in this feature. -->
