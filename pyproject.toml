@@ -53,6 +53,11 @@ dev = [
     "mypy>=1.5.0",
     "bandit>=1.7.5",
     "vulture>=2.10",
+    "pylint>=3.0.0",
+    "flake8>=6.1.0",
+    "flake8-bugbear>=23.9.0",
+    "semgrep>=1.50.0",
+    "pyupgrade>=3.3.0",
     "pre-commit>=3.4.0",
     "types-redis>=4.6.0",
     "types-python-dotenv>=1.0.0",
@@ -115,3 +120,58 @@ exclude_lines = [
     "pass",
     "@(abc\\.abstractmethod|typing\\.overload)",
 ]
+
+[tool.vulture]
+paths = ["src", "tests"]
+min_confidence = 80
+exclude = ["*/__pycache__/*", "*/migrations/*"]
+ignore_decorators = ["@app.route", "@router.get", "@router.post", "@router.put", "@router.delete", "@router.patch", "@pytest.fixture"]
+ignore_names = ["test_*"]
+make_whitelist = false
+sort_by_size = false
+
+[tool.pylint.messages_control]
+max-line-length = 100
+disable = ["C0330", "C0326", "C0103"]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "x", "y", "z", "db", "id", "e", "ex", "cls", "_"]
+variable-rgx = "[a-z_][a-z0-9_]*$"
+function-rgx = "[a-z_][a-z0-9_]*$"
+method-rgx = "[a-z_][a-z0-9_]*$"
+attr-rgx = "[a-z_][a-z0-9_]*$"
+argument-rgx = "[a-z_][a-z0-9_]*$"
+
+[tool.pylint.design]
+max-args = 8
+max-attributes = 15
+max-branches = 12
+max-locals = 20
+max-returns = 6
+max-statements = 50
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E501", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "*/migrations/*",
+]
+per-file-ignores = [
+    "tests/*:S101",
+]
+
+[tool.pyupgrade]
+keep_runtime_typing = true
+py311-plus = true
+
+[tool.semgrep]
+config = "p/security-audit"
+tests = "tests/"
