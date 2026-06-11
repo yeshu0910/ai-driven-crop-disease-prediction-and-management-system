@@ -4,13 +4,16 @@ import plotly.express as px
 import pandas as pd
 from datetime import datetime, timedelta
 import random
+import os
 
 st.set_page_config(page_title="Home - Crop Disease AI", page_icon="🌱", layout="wide")
 
-
 def load_css():
-    with open("assets/style.css") as f:
+    css_path = os.path.join(os.path.dirname(__file__), "assets/style.css")
+    with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
 
 
 def render_header():
