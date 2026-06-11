@@ -151,6 +151,9 @@ class ExplainableAI:
             if model is None:
                 return None
 
+            if len(model.inputs) == 0:
+                _ = model(image_array)
+
             last_conv_layer = self._find_last_conv_layer(model)
             if last_conv_layer is None:
                 return None

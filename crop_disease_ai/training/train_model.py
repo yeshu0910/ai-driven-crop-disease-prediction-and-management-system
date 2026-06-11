@@ -28,8 +28,13 @@ logger = logging.getLogger(__name__)
 def create_demo_training_data(data_dir, num_samples_per_class=20):
     """Create small demo dataset when PlantVillage is not available."""
     logger.info("Creating demo training data...")
+    logger.warning("=" * 60)
+    logger.warning("WARNING: Generating synthetic random-noise training data.")
+    logger.warning("Models trained on this data will produce RANDOM predictions.")
+    logger.warning("Replace with real PlantVillage dataset for meaningful results.")
+    logger.warning("=" * 60)
     data_dir = Path(data_dir)
-    classes = list(DISEASE_CLASSES.keys())[:10]
+    classes = list(DISEASE_CLASSES.keys())
 
     for cls in classes:
         cls_dir = data_dir / "train" / cls
@@ -121,7 +126,8 @@ def train_model():
         target_size=(IMG_SIZE, IMG_SIZE),
         batch_size=BATCH_SIZE,
         class_mode='categorical',
-        shuffle=True
+        shuffle=True,
+        interpolation='bilinear'
     )
 
     val_generator = val_datagen.flow_from_directory(
@@ -129,7 +135,8 @@ def train_model():
         target_size=(IMG_SIZE, IMG_SIZE),
         batch_size=BATCH_SIZE,
         class_mode='categorical',
-        shuffle=False
+        shuffle=False,
+        interpolation='bilinear'
     )
 
     callbacks = [
@@ -204,6 +211,12 @@ def train_model():
 
 def create_dummy_model():
     """Create a simple dummy model for testing when no dataset is available."""
+    logger.warning("=" * 60)
+    logger.warning("WARNING: Creating dummy model with RANDOM WEIGHTS.")
+    logger.warning("This model is trained on synthetic noise data (not real plants).")
+    logger.warning("Predictions will be essentially RANDOM (~1/num_classes accuracy).")
+    logger.warning("Train on a real dataset (PlantVillage) for meaningful results.")
+    logger.warning("=" * 60)
     logger.info("Creating dummy model for testing...")
     num_classes = len(DISEASE_CLASSES)
 
