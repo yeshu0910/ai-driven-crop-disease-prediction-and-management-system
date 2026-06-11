@@ -4,8 +4,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from utils.translator import t, load_translations, get_supported_languages
+
 st.set_page_config(
-    page_title="Crop Disease AI - Smart Agriculture",
+    page_title=t("app.title"),
     page_icon="🌱",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -32,26 +34,28 @@ def init_session_state():
         from database.db_manager import DatabaseManager
         DatabaseManager()
         st.session_state["db_initialized"] = True
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
 
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown("""
+        st.markdown(f"""
             <div class="sidebar-header">
-                <h3>🌱 Crop Disease AI</h3>
-                <p style="font-size: 0.8rem; opacity: 0.8;">Smart Agriculture Platform</p>
+                <h3>{t("sidebar.header_title")}</h3>
+                <p style="font-size: 0.8rem; opacity: 0.8;">{t("sidebar.header_subtitle")}</p>
             </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("### Navigation")
+        st.markdown(f"### {t('nav.navigation')}")
         pages = {
-            "🏠 Home": "1_Home.py",
-            "🔬 Disease Detection": "2_Detection.py",
-            "📊 Analytics": "3_Analytics.py",
-            "📖 Knowledge Base": "4_Knowledge_Base.py",
-            "🌤️ Weather": "5_Weather.py",
-            "📋 History": "6_History.py",
-            "ℹ️ About": "7_About.py"
+            t("nav.home"): "1_Home.py",
+            t("nav.detection"): "2_Detection.py",
+            t("nav.analytics"): "3_Analytics.py",
+            t("nav.knowledge_base"): "4_Knowledge_Base.py",
+            t("nav.weather"): "5_Weather.py",
+            t("nav.history"): "6_History.py",
+            t("nav.about"): "7_About.py"
         }
 
         for label, page_file in pages.items():
@@ -61,53 +65,65 @@ def render_sidebar():
                 st.switch_page(f"pages/{page_file}")
 
         st.markdown("---")
-        st.markdown("### 👤 Farmer Profile")
+        st.markdown(f"### {t('sidebar.farmer_profile')}")
         st.session_state["farmer_name"] = st.text_input(
-            "Name", value=st.session_state.get("farmer_name", ""),
-            placeholder="Enter your name"
+            t("sidebar.name"), value=st.session_state.get("farmer_name", ""),
+            placeholder=t("sidebar.name_placeholder")
         )
         st.session_state["farm_location"] = st.text_input(
-            "Location", value=st.session_state.get("farm_location", ""),
-            placeholder="Farm location"
+            t("sidebar.location"), value=st.session_state.get("farm_location", ""),
+            placeholder=t("sidebar.location_placeholder")
         )
 
         st.markdown("---")
-        st.markdown("### ⚙️ Settings")
+        st.markdown(f"### {t('sidebar.settings')}")
+        theme_options = [t("sidebar.light"), t("sidebar.dark")]
         theme = st.selectbox(
-            "Theme",
-            ["Light", "Dark"],
+            t("sidebar.theme"),
+            theme_options,
             index=0 if st.session_state.get("theme") == "light" else 1
         )
-        st.session_state["theme"] = theme.lower()
+        st.session_state["theme"] = "light" if theme == t("sidebar.light") else "dark"
+
+        langs = get_supported_languages()
+        lang_labels = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
+        lang_options = [f"{lang_labels.get(l, l.upper())}" for l in langs]
+        current_lang = st.session_state.get("language", "en")
+        lang_idx = langs.index(current_lang) if current_lang in langs else 0
+        selected_lang = st.selectbox(
+            t("app.language"), lang_options, index=lang_idx
+        )
+        new_lang = langs[lang_options.index(selected_lang)]
+        if new_lang != current_lang:
+            st.session_state["language"] = new_lang
+            load_translations(new_lang)
+            st.rerun()
 
         st.markdown("---")
-        st.markdown("""
+        st.markdown(f"""
             <div style="text-align: center; padding: 1rem 0; font-size: 0.8rem; color: #888;">
-                <p>🌱 AI Crop Disease AI</p>
-                <p>Version 1.0.0</p>
+                <p>{t("app.footer_title")}</p>
+                <p>{t("app.version")}</p>
             </div>
         """, unsafe_allow_html=True)
 
 
 def render_main():
-    st.markdown("""
+    st.markdown(f"""
         <div class="main-header">
-            <h1>🌱 AI-Driven Crop Disease Prediction System</h1>
-            <p>Intelligent disease detection · Smart recommendations · Weather-based risk analysis</p>
+            <h1>{t("app.main_title")}</h1>
+            <p>{t("app.subtitle")}</p>
         </div>
     """, unsafe_allow_html=True)
 
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.markdown("""
+        st.markdown(f"""
             <div class="dashboard-card" style="padding: 2rem;">
-                <h2 style="color: #2e7d32; margin-bottom: 1rem;">Welcome to the Future of Farming</h2>
+                <h2 style="color: #2e7d32; margin-bottom: 1rem;">{t("welcome.title")}</h2>
                 <p style="line-height: 1.7; font-size: 1.05rem;">
-                    Leverage the power of <strong>Artificial Intelligence</strong> and
-                    <strong>Computer Vision</strong> to protect your crops and maximize yields.
-                    Our system can detect diseases from leaf images, analyze severity, provide
-                    treatment recommendations, and predict future disease risks based on weather conditions.
+                    {t("welcome.description")}
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -117,12 +133,12 @@ def render_main():
         """, unsafe_allow_html=True)
 
         quick_actions = [
-            ("🔬", "Detect Disease", "Analyze crop leaf images for disease detection", "pages/2_Detection.py"),
-            ("📊", "View Analytics", "Track disease trends and crop health metrics", "pages/3_Analytics.py"),
-            ("🌤️", "Weather Risk", "Check weather-based disease risk predictions", "pages/5_Weather.py"),
-            ("📖", "Knowledge Base", "Browse comprehensive disease information", "pages/4_Knowledge_Base.py"),
-            ("📋", "History", "View past detection records and reports", "pages/6_History.py"),
-            ("ℹ️", "About", "Learn about the system and how to use it", "pages/7_About.py")
+            ("🔬", t("quick_action.detect"), t("quick_action.detect_desc"), "pages/2_Detection.py"),
+            ("📊", t("quick_action.analytics"), t("quick_action.analytics_desc"), "pages/3_Analytics.py"),
+            ("🌤️", t("quick_action.weather"), t("quick_action.weather_desc"), "pages/5_Weather.py"),
+            ("📖", t("quick_action.knowledge"), t("quick_action.knowledge_desc"), "pages/4_Knowledge_Base.py"),
+            ("📋", t("quick_action.history"), t("quick_action.history_desc"), "pages/6_History.py"),
+            ("ℹ️", t("quick_action.about"), t("quick_action.about_desc"), "pages/7_About.py")
         ]
 
         for icon, label, desc, page in quick_actions:
@@ -140,16 +156,16 @@ def render_main():
 
     with col2:
         stats = get_dashboard_stats()
-        st.markdown("""
+        st.markdown(f"""
             <div class="dashboard-card" style="padding: 1.5rem;">
-                <h3 style="margin-bottom: 1rem;">📊 Quick Stats</h3>
+                <h3 style="margin-bottom: 1rem;">{t("stats.quick_stats")}</h3>
         """, unsafe_allow_html=True)
 
         stat_items = [
-            ("🔬", "Total Scans", stats["total_scans"], "#2e7d32"),
-            ("✅", "Healthy", stats["healthy_scans"], "#4caf50"),
-            ("⚠️", "Diseased", stats["diseased_scans"], "#ff6f00"),
-            ("🌾", "Crops", stats["total_crops"], "#1976d2")
+            ("🔬", t("stats.total_scans"), stats["total_scans"], "#2e7d32"),
+            ("✅", t("stats.healthy"), stats["healthy_scans"], "#4caf50"),
+            ("⚠️", t("stats.diseased"), stats["diseased_scans"], "#ff6f00"),
+            ("🌾", t("stats.crops"), stats["total_crops"], "#1976d2")
         ]
         for icon, label, value, color in stat_items:
             st.markdown(f"""
@@ -162,23 +178,22 @@ def render_main():
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("""
+        st.markdown(f"""
             <div class="dashboard-card" style="padding: 1.5rem; margin-top: 1rem;">
-                <h3 style="margin-bottom: 0.5rem;">💡 Quick Tip</h3>
+                <h3 style="margin-bottom: 0.5rem;">{t("tip.title")}</h3>
                 <p style="color: #555; font-size: 0.9rem;">
-                    Upload a clear, well-lit photo of the affected leaf for the most accurate diagnosis.
-                    Capture from multiple angles if possible.
+                    {t("tip.description")}
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("""
+    st.markdown(f"""
         <div style="text-align: center; padding: 1.5rem; margin-top: 1rem;
              background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
              border-radius: 16px;">
-            <h3 style="color: #2e7d32; font-weight: 700;">🌱 Ready to protect your crops?</h3>
-            <p style="color: #555;">Navigate to <strong>Disease Detection</strong> to begin analyzing your crops.</p>
+            <h3 style="color: #2e7d32; font-weight: 700;">{t("welcome.cta_title")}</h3>
+            <p style="color: #555;">{t("welcome.cta_subtitle")}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -200,6 +215,8 @@ def get_dashboard_stats():
 def main():
     load_css()
     init_session_state()
+    lang = st.session_state.get("language", "en")
+    load_translations(lang)
     render_sidebar()
     render_main()
 
