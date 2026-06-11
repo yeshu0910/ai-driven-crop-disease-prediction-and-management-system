@@ -74,7 +74,7 @@ ml = [
 crop-disease-api = "src.api.main:run"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["crop_disease_ai"]
 
 [tool.setuptools.package-data]
 "src" = ["py.typed"]
@@ -107,7 +107,7 @@ warn_no_return = true
 warn_unreachable = true
 
 [tool.coverage.run]
-source = ["src"]
+source = ["crop_disease_ai"]
 omit = ["*/__main__.py", "*/migrations/*"]
 
 [tool.coverage.report]

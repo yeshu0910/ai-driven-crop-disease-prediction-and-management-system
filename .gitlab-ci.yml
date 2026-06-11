@@ -1,8 +1,10 @@
 stages:
   - lint
+  - format
   - typecheck
   - security
   - test
+  - coverage
   - build
   - deploy
 
@@ -25,6 +27,19 @@ lint:
   script:
     - pip install ruff
     - ruff check --output-format=gitlab .
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+format:
+  stage: format
+  image: python:$PYTHON_VERSION
+  cache:
+    paths:
+      - .cache/pip
+      - .cache/ruff
+  script:
+    - pip install ruff
     - ruff format --check .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -39,7 +54,7 @@ typecheck:
   script:
     - pip install mypy
     - pip install -e .
-    - mypy src/
+    - mypy .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
@@ -96,10 +111,28 @@ test:
       - .cache/pip
   script:
     - pip install -e ".[dev]"
-    - pytest --cov=src --cov-report=term --cov-report=xml --cov-fail-under=80
+    - pytest --cov=. --cov-report=term --cov-report=xml
   artifacts:
     paths:
       - coverage.xml
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+coverage:
+  stage: coverage
+  image: python:$PYTHON_VERSION
+  cache:
+    paths:
+      - .cache/pip
+  script:
+    - pip install -e ".[dev]"
+    - pytest --cov=. --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=80
+  artifacts:
+    paths:
+      - coverage.xml
+      - htmlcov/
     expire_in: 1 week
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
