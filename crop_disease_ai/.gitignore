@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+*.db
+reports/*
+!reports/.gitkeep
+models/*.h5
+models/*.npy
+!models/.gitkeep
+data/*
+!data/.gitkeep
+.DS_Store
+*.log
+venv/
+.venv/

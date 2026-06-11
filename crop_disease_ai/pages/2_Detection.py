@@ -1,0 +1,537 @@
+import streamlit as st
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
+import cv2
+from PIL import Image
+import io
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+st.set_page_config(page_title="Disease Detection - Crop Disease AI", page_icon="🔬", layout="wide")
+
+
+def load_css():
+    with open("assets/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+@st.cache_resource
+def get_models():
+    from utils.model_handler import ModelHandler
+    from utils.image_processor import ImageProcessor
+    from utils.severity_analyzer import SeverityAnalyzer
+    from utils.disease_knowledge_base import DiseaseKnowledgeBase
+    from utils.recommendation_engine import RecommendationEngine
+    from utils.explainable_ai import ExplainableAI
+    from utils.weather_api import WeatherAPI
+    from database.db_manager import DatabaseManager
+    return {
+        "model": ModelHandler(),
+        "processor": ImageProcessor(),
+        "severity": SeverityAnalyzer(),
+        "knowledge_base": DiseaseKnowledgeBase(),
+        "recommender": RecommendationEngine(),
+        "xai": ExplainableAI(),
+        "weather": WeatherAPI(),
+        "db": DatabaseManager()
+    }
+
+
+def render_header():
+    st.markdown("""
+        <div class="main-header">
+            <h1>🔬 AI Disease Detection</h1>
+            <p>Upload a leaf image to detect diseases with AI-powered analysis</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
+def render_prediction_results(result, image_np, models):
+    processor = models["processor"]
+    severity_analyzer = models["severity"]
+    knowledge_base = models["knowledge_base"]
+    recommender = models["recommender"]
+    xai = models["xai"]
+    db = models["db"]
+
+    disease_name = result["disease_name"]
+    crop_name = result["crop_name"]
+    confidence = result["confidence"]
+    is_healthy = result["is_healthy"]
+    is_low_confidence = result.get("is_low_confidence", False)
+    model_used = result.get("model_used", "unknown")
+    is_unknown_crop = crop_name == "Unknown"
+    is_unknown_disease = model_used in ("unknown_disease", "unknown_crop")
+
+    infection_pct, infection_mask = processor.analyze_infection_area(image_np)
+    severity_result = severity_analyzer.analyze(infection_pct, disease_name, confidence)
+
+    disease_info = knowledge_base.get_disease_info(disease_name)
+
+    weather_data = None
+    weather = models["weather"]
+    loc = st.session_state.get("weather_location", "").strip()
+    if loc and weather.is_configured():
+        weather_data = weather.get_current_weather(loc)
+
+    recommendations = recommender.generate_recommendations(
+        crop_name, disease_name, severity_result["severity"],
+        infection_pct, weather_data
+    )
+
+    explanation = xai.generate_explanation(result, image_np, disease_info)
+
+    overlay, heatmap, thresh = processor.generate_heatmap(image_np, infection_mask)
+
+    yield_impact = severity_analyzer.calculate_yield_impact(
+        severity_result["severity"], crop_name
+    )
+
+    st.session_state["last_result"] = {
+        "disease_name": disease_name,
+        "crop_name": crop_name,
+        "confidence": confidence,
+        "severity": severity_result["severity"],
+        "infection_percentage": infection_pct,
+        "risk_level": severity_result["risk_level"],
+        "image": image_np,
+        "treatment": recommendations,
+        "weather": weather_data,
+        "explanation": explanation,
+        "yield_impact": yield_impact
+    }
+
+    if is_unknown_crop:
+        st.warning("""
+            Could not identify the crop type with sufficient confidence.
+            Consider uploading a clearer image or selecting the crop manually.
+        """)
+
+    disease_color = "#888"
+    icon = "❓"
+    if is_low_confidence:
+        disease_color = "#e67e22"
+        icon = "⚠️"
+    elif is_healthy:
+        disease_color = "#2ecc71"
+        icon = "✅"
+    else:
+        disease_color = severity_result["color"]
+        icon = severity_result.get("icon", "🔬")
+
+    st.markdown(f"""
+        <div style="background: linear-gradient(135deg, {disease_color}15, {disease_color}08);
+             border: 2px solid {disease_color}; border-radius: 16px; padding: 2rem;
+             margin: 1rem 0;">
+            <h2 style="color: {disease_color}; font-weight: 800; margin-bottom: 0.5rem;">
+                {icon} {disease_name}
+            </h2>
+            <p style="font-size: 1.1rem; color: #555;">
+                Crop: <strong>{crop_name}</strong> |
+                Confidence: <strong>{confidence*100:.2f}%</strong> |
+                Severity: <strong>{severity_result['severity']}</strong>
+            </p>
+    """, unsafe_allow_html=True)
+
+    if is_low_confidence:
+        st.warning(f"⚠️ **Low Confidence Prediction** — Confidence is {confidence*100:.1f}%. Please upload a clearer image for better accuracy.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["📊 Analysis", "🔬 Heatmap", "💊 Treatment", "🤖 AI Explanation", "📄 Report"]
+    )
+
+    with tab1:
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            severity_val = severity_analyzer.get_severity_meter_value(severity_result["severity"])
+            st.markdown(f"""
+                <h4>Severity: {severity_result['severity']}</h4>
+                <div class="severity-meter">
+                    <div class="severity-meter-fill" style="width: {severity_val}%;
+                         background: linear-gradient(90deg, {disease_color}88, {disease_color});"></div>
+                </div>
+                <p>Infection: {infection_pct:.1f}%</p>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+                <div class="info-box {'green' if is_healthy else 'orange' if severity_result['severity']=='Mild' else 'red'}">
+                    <strong>Risk Level:</strong> {severity_result['risk_level']}<br>
+                    <strong>Yield Impact:</strong> ~{yield_impact}%<br>
+                    <strong>Treatment Urgency:</strong> {severity_analyzer.get_treatment_urgency(severity_result['severity'])}
+                </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"**Spread Estimation:** {severity_result['spread_estimation']}")
+
+            crop_confidence = result.get("crop_confidence", 0)
+            top5_crops = result.get("top_5_crops", [])
+
+            if crop_confidence > 0:
+                crop_conf_pct = crop_confidence * 100
+                st.markdown(f"""
+                    <div style="margin: 0.5rem 0; padding: 0.5rem; background: #e8f5e9; border-radius: 8px;">
+                        <strong>Identified Crop:</strong> {crop_name}
+                        (confidence: {crop_conf_pct:.0f}%)
+                    </div>
+                """, unsafe_allow_html=True)
+
+            if top5_crops and len(top5_crops) > 1:
+                max_score = max(c["score"] for c in top5_crops)
+                with st.expander("Top Candidate Crops", expanded=is_low_confidence):
+                    for i, cp in enumerate(top5_crops):
+                        bar_w = min(cp["score"] / max_score * 100, 100)
+                        st.markdown(f"""
+                            <div style="margin: 0.2rem 0;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <span>{cp['crop']}</span>
+                                    <span>{cp['score']:.1f}</span>
+                                </div>
+                                <div class="severity-meter">
+                                    <div class="severity-meter-fill" style="width: {bar_w}%;
+                                         background: #2e7d32;"></div>
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+
+            model_label = model_used.replace("_", " ").title()
+            st.markdown(f"**Method:** {model_label}")
+
+            st.markdown("**Top Predictions:**")
+            predictions_list = result.get("top_5_predictions", result.get("top_3_predictions", []))
+            top_5_colors = ["#2e7d32", "#1b5e20", "#555", "#777", "#999"]
+            for i, pred in enumerate(predictions_list):
+                pct = pred["confidence"] * 100
+                if pct < 0.5:
+                    continue
+                bar_color = top_5_colors[i] if i < len(top_5_colors) else "#999"
+                crop_tag = pred.get("disease_name", "").split(" ")[0] if " " in pred.get("disease_name", "") else ""
+                st.markdown(f"""
+                    <div style="margin: 0.3rem 0;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                            <span><strong>{pred['disease_name']}</strong></span>
+                            <span><strong>{pct:.1f}%</strong></span>
+                        </div>
+                        <div class="severity-meter">
+                            <div class="severity-meter-fill" style="width: {pct}%;
+                                 background: {bar_color};"></div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            raw_model = result.get("raw_model_top5")
+            if raw_model:
+                with st.expander("Raw Model Output (before validation)", expanded=False):
+                    st.caption("What the neural network predicted before crop consistency check")
+                    for pred in raw_model:
+                        pct = pred["confidence"] * 100
+                        st.markdown(f"- **{pred['disease_name']}**: {pct:.1f}% (idx={pred['index']})")
+
+            pred_quality = result.get("prediction_quality")
+            if pred_quality:
+                with st.expander("Prediction Quality Metrics", expanded=False):
+                    st.caption("Internal model validation diagnostics")
+                    for err in pred_quality.get("validation_errors", []):
+                        st.markdown(f"- ⚠️ {err}")
+                    st.markdown(f"- Entropy: {pred_quality.get('norm_entropy', 'N/A')}")
+                    st.markdown(f"- Margin: {pred_quality.get('margin', 'N/A')}")
+
+        with col2:
+            st.markdown("<h4>Disease Information</h4>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="dashboard-card">
+                    <p><strong>Description:</strong> {disease_info.get('description', 'N/A')[:300]}...</p>
+                    <p style="margin-top: 0.5rem;"><strong>Symptoms:</strong></p>
+                    <ul style="font-size: 0.9rem;">
+                        {''.join(f'<li>{s}</li>' for s in disease_info.get('symptoms', [])[:4])}
+                    </ul>
+                    <p style="margin-top: 0.5rem;"><strong>Favorable Conditions:</strong><br>
+                        {disease_info.get('favorable_conditions', 'N/A')}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    with tab2:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("<h4 style='text-align: center;'>Original Image</h4>", unsafe_allow_html=True)
+            display_img = cv2.resize(image_np, (224, 224))
+            if display_img.shape[-1] == 4:
+                display_img = cv2.cvtColor(display_img, cv2.COLOR_RGBA2RGB)
+            elif len(display_img.shape) == 2:
+                display_img = cv2.cvtColor(display_img, cv2.COLOR_GRAY2RGB)
+            st.image(display_img, width='stretch')
+
+        with col2:
+            st.markdown("<h4 style='text-align: center;'>Infection Heatmap</h4>", unsafe_allow_html=True)
+            heatmap_rgb = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB) if heatmap.shape[-1] == 3 and len(heatmap.shape) == 3 else heatmap
+            st.image(heatmap_rgb, width='stretch')
+
+        with col3:
+            st.markdown("<h4 style='text-align: center;'>Overlay View</h4>", unsafe_allow_html=True)
+            overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB) if overlay.shape[-1] == 3 else overlay
+            st.image(overlay_rgb, width='stretch')
+
+        st.markdown(f"""
+            <div style="text-align: center; margin-top: 1rem;">
+                <p><strong>Infected Area:</strong> {infection_pct:.1f}% of leaf surface |
+                <strong>Severity:</strong> {severity_result['severity']}</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with tab3:
+        recs = recommendations
+        cat_icons = {"chemical_treatment": "🧪", "organic_treatment": "🌿",
+                     "fertilizer_suggestions": "🧫", "irrigation_guidance": "💧",
+                     "prevention_measures": "🛡️", "crop_management_tips": "📋"}
+        cat_labels = {"chemical_treatment": "Chemical Treatment",
+                      "organic_treatment": "Organic Treatment",
+                      "fertilizer_suggestions": "Fertilizer Suggestions",
+                      "irrigation_guidance": "Irrigation Guidance",
+                      "prevention_measures": "Prevention Measures",
+                      "crop_management_tips": "Crop Management Tips"}
+
+        st.markdown(f"""
+            <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
+                <strong>Urgency:</strong> {recs.get('urgency', 'Normal')}
+            </div>
+        """, unsafe_allow_html=True)
+
+        for cat_key, cat_icon in cat_icons.items():
+            items = recs.get(cat_key, [])
+            if items:
+                with st.expander(f"{cat_icon} {cat_labels.get(cat_key, cat_key)}", expanded=(cat_key in ["chemical_treatment", "organic_treatment"])):
+                    for item in items:
+                        st.markdown(f"- {item}")
+
+    with tab4:
+        st.markdown("<h4>Why This Diagnosis Was Made</h4>", unsafe_allow_html=True)
+        for reason in explanation.get("prediction_rationale", []):
+            st.markdown(f"- {reason}")
+
+        st.markdown("<h4 style='margin-top: 1.5rem;'>Confidence Analysis</h4>", unsafe_allow_html=True)
+        conf = explanation.get("confidence_analysis", {})
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Confidence", f"{conf.get('overall_confidence', 0):.1f}%")
+        with col2:
+            st.metric("Rating", conf.get("confidence_rating", "N/A"))
+        with col3:
+            st.metric("Margin", f"{conf.get('margin_over_second', 0):.1f}%")
+
+        st.markdown(f"**Reliability:** {conf.get('reliability', 'N/A')}")
+
+        similar = explanation.get("similar_diseases", [])
+        if similar:
+            st.markdown("<h4 style='margin-top: 1.5rem;'>Similar Diseases Considered</h4>", unsafe_allow_html=True)
+            for s in similar:
+                st.markdown(f"- **{s['disease_name']}** ({s['confidence']}%) - {s.get('similarity_reason', '')}")
+
+        st.markdown("<h4 style='margin-top: 1.5rem;'>Model Interpretation</h4>", unsafe_allow_html=True)
+        interp = explanation.get("model_interpretation", {})
+        st.markdown(f"**Decision Path:** {interp.get('decision_path', 'N/A')}")
+        st.markdown("**Primary Factors Considered:**")
+        for factor in interp.get("primary_factors", []):
+            st.markdown(f"- {factor}")
+
+    with tab5:
+        st.markdown("<h4>Generate Diagnostic Report</h4>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            farmer_name = st.text_input("Farmer Name", value=st.session_state.get("farmer_name", ""))
+        with col2:
+            farm_location = st.text_input("Farm Location", value=st.session_state.get("farm_location", ""))
+
+        if st.button("📄 Generate PDF Report", type="primary", width='stretch'):
+            with st.spinner("Generating PDF report..."):
+                try:
+                    from utils.pdf_generator import PDFGenerator
+                    pdf_gen = PDFGenerator()
+
+                    report_id = f"RPT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+                    pil_img = Image.fromarray(
+                        cv2.cvtColor(cv2.resize(image_np, (224, 224)), cv2.COLOR_BGR2RGB)
+                        if len(image_np.shape) == 3 and image_np.shape[-1] == 3
+                        else image_np
+                    )
+
+                    report_data = {
+                        "report_id": report_id,
+                        "farmer_name": farmer_name or "Not Specified",
+                        "location": farm_location or "Not Specified",
+                        "crop_name": crop_name,
+                        "disease_name": disease_name,
+                        "confidence": confidence,
+                        "severity": severity_result["severity"],
+                        "infection_percentage": infection_pct,
+                        "risk_level": severity_result["risk_level"],
+                        "scan_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "image": pil_img,
+                        "treatment": recommendations,
+                        "weather": weather_data,
+                        "explanation": explanation,
+                        "yield_impact": yield_impact
+                    }
+
+                    pdf_bytes, filename, pdf_path = pdf_gen.generate_report_bytes(report_data)
+
+                    st.success(f"✅ Report generated: {filename}")
+                    st.download_button(
+                        label="📥 Download PDF Report",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf",
+                        width='stretch'
+                    )
+                except Exception as e:
+                    st.error(f"Failed to generate PDF: {str(e)}")
+
+        st.markdown("---")
+        if st.button("💾 Save to Database", width='stretch', type="secondary"):
+            try:
+                pred_id = db.save_prediction(
+                    farmer_id=1,
+                    image_path="webcam_capture",
+                    crop_name=crop_name,
+                    disease_name=disease_name,
+                    confidence=confidence,
+                    severity=severity_result["severity"],
+                    infection_percentage=infection_pct,
+                    risk_level=severity_result["risk_level"],
+                    weather_data=weather_data,
+                    treatment_recommendations=recommendations
+                )
+                st.success(f"✅ Saved to database (ID: {pred_id})")
+            except Exception as e:
+                st.error(f"Failed to save: {str(e)}")
+
+
+def main():
+    load_css()
+    render_header()
+
+    models = get_models()
+
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.markdown("""
+            <div class="dashboard-card">
+                <h3 style="margin-bottom: 1rem;">📷 Upload Image</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        input_method = st.radio("Choose input method:", ["Upload Image", "Capture from Camera"], horizontal=True)
+
+        image_np = None
+        uploaded_file = None
+
+        if input_method == "Upload Image":
+            uploaded_file = st.file_uploader(
+                "Choose a leaf image...",
+                type=["jpg", "jpeg", "png", "webp", "tiff"],
+                label_visibility="collapsed"
+            )
+            if uploaded_file:
+                processor = models["processor"]
+                is_valid, msg = processor.validate_image(uploaded_file)
+                if not is_valid:
+                    st.error(msg)
+                    uploaded_file = None
+                else:
+                    image_np = processor.load_image(uploaded_file)
+
+        else:
+            img_file = st.camera_input("Capture leaf image")
+            if img_file:
+                from utils.image_processor import ImageProcessor
+                processor = ImageProcessor()
+                image_bytes = img_file.getvalue()
+                image_np = processor.load_image_from_bytes(image_bytes)
+
+        if image_np is not None:
+            st.image(image_np, caption="Uploaded Image", width='stretch')
+
+    with col2:
+        st.markdown("""
+            <div class="dashboard-card">
+                <h3 style="margin-bottom: 1rem;">⚙️ Detection Settings</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if image_np is not None:
+            processor = models["processor"]
+            prepared = processor.prepare_for_model(image_np)
+            crop_pred = models["model"].predict_crop(prepared)
+
+            st.markdown("**Detected Crop Candidates:**")
+            for cp in crop_pred["top_candidates"][:5]:
+                bar_w = min(cp["pct"], 100)
+                st.markdown(f"""
+                    <div style="margin: 0.2rem 0;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                            <span>{cp['crop']}</span>
+                            <span>{cp['pct']:.1f}%</span>
+                        </div>
+                        <div class="severity-meter">
+                            <div class="severity-meter-fill" style="width: {bar_w}%;
+                                 background: {"#2e7d32" if cp['crop'] == crop_pred['crop_name'] else "#888"};"></div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            if not crop_pred["is_confident"]:
+                st.warning(
+                    f"Crop confidence ({crop_pred['confidence']*100:.1f}%) below 95% threshold. "
+                    "Select crop manually or accept auto-detected crop."
+                )
+                manual_crop = st.selectbox(
+                    "**Select Crop (manual override):**",
+                    [crop_pred["crop_name"]] + [c for c in sorted(models["model"].SUPPORTED_CROPS) if c != crop_pred["crop_name"]],
+                    index=0
+                )
+                crop_hint = manual_crop
+            else:
+                st.success(f"**Detected Crop:** {crop_pred['crop_name']} ({crop_pred['confidence']*100:.1f}% confidence)")
+                crop_hint = None
+
+            st.session_state["weather_location"] = st.text_input(
+                "Weather Location (e.g., city name)",
+                placeholder="e.g., Mumbai, Delhi, Pune",
+                value=st.session_state.get("weather_location", "")
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            if st.button("🔍 Detect Disease", type="primary", width='stretch'):
+                with st.spinner("🔬 Analyzing image with AI model..."):
+                    try:
+                        result = models["model"].predict(prepared, crop_hint=crop_hint)
+
+                        if result["success"]:
+                            render_prediction_results(result, image_np, models)
+                        else:
+                            st.error("Model prediction failed. Please try again.")
+                    except Exception as e:
+                        st.error(f"Error during detection: {str(e)}")
+                        import traceback
+                        st.error(traceback.format_exc())
+        else:
+            st.info("👆 Upload or capture an image to start detection")
+
+    if image_np is not None and "last_result" not in st.session_state:
+        st.info("Click 'Detect Disease' to analyze the image")
+
+
+if __name__ == "__main__":
+    if "last_result" in st.session_state:
+        del st.session_state["last_result"]
+    main()
