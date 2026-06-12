@@ -1,6 +1,7 @@
-import streamlit as st
 import sys
 from pathlib import Path
+
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -10,8 +11,10 @@ st.set_page_config(page_title="About - Crop Disease AI", page_icon="ℹ️", lay
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
+    if css_path.exists():
+        with open(str(css_path)) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 def render_header():
@@ -60,18 +63,16 @@ def main():
             ("🗄️", t("about.feature_db"), t("about.feature_db_desc")),
             ("📖", t("about.feature_kb"), t("about.feature_kb_desc"))
         ]
-
         for icon, title, desc in features:
             st.markdown(f"""
-                <div style="display: flex; gap: 1rem; margin: 1rem 0;">
-                    <div style="font-size: 2rem;">{icon}</div>
+                <div style="display:flex;gap:0.75rem;margin:0.75rem 0;">
+                    <div style="font-size:1.5rem;flex-shrink:0;">{icon}</div>
                     <div>
-                        <h4 style="margin: 0; font-weight: 700;">{title}</h4>
-                        <p style="margin: 0.2rem 0 0; color: #555;">{desc}</p>
+                        <h4 style="margin:0;font-weight:700;font-size:0.9rem;">{title}</h4>
+                        <p style="margin:0.15rem 0 0;color:var(--text-secondary);font-size:0.85rem;">{desc}</p>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
@@ -79,7 +80,6 @@ def main():
             <div class="dashboard-card" style="padding: 2rem;">
                 <h3 style="color: #2e7d32; margin-bottom: 1rem;">{t('about.tech_stack')}</h3>
         """, unsafe_allow_html=True)
-
         techs = [
             ("🐍", "Python 3.11+", "Core programming language"),
             ("🌐", "Streamlit", "Web application framework"),
@@ -90,29 +90,25 @@ def main():
             ("🌤️", "OpenWeather API", "Weather data integration"),
             ("📄", "ReportLab", "PDF generation engine"),
             ("📈", "Scikit-learn", "ML utilities & evaluation"),
-            ("🐳", "Docker", "Containerization & deployment")
+            ("🐳", "Docker", "Containerization & deployment"),
         ]
-
         for icon, tech, desc in techs:
             st.markdown(f"""
-                <div style="margin: 0.5rem 0;">
+                <div style="margin:0.4rem 0;font-size:0.85rem;">
                     <strong>{icon} {tech}</strong>
-                    <div style="font-size: 0.85rem; color: #666;">{desc}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">{desc}</div>
                 </div>
             """, unsafe_allow_html=True)
-
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown(f"""
             <div class="dashboard-card" style="padding: 2rem; margin-top: 1.5rem;">
                 <h3 style="color: #2e7d32; margin-bottom: 1rem;">{t('about.supported_crops')}</h3>
         """, unsafe_allow_html=True)
-
         crops = ["Tomato", "Potato", "Rice", "Wheat", "Corn", "Cotton", "Soybean",
                  "Sugarcane", "Groundnut", "Sunflower", "Banana", "Mango", "Grapes", "Apple", "Chili"]
         for crop in crops:
-            st.markdown(f"- {crop}")
-
+            st.markdown(f"<div style='font-size:0.85rem;padding:0.1rem 0;'>{crop}</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")

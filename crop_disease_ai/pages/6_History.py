@@ -1,9 +1,9 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from datetime import datetime
 import sys
+from datetime import datetime
 from pathlib import Path
+
+import pandas as pd
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -13,8 +13,10 @@ st.set_page_config(page_title="History - Crop Disease AI", page_icon="📋", lay
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
+    if css_path.exists():
+        with open(str(css_path)) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -53,7 +55,6 @@ def render_predictions_table(predictions, search_query, sort_by, crop_filter):
         created = p.get("created_at", "")
         if created and isinstance(created, str) and "T" in created:
             created = created.split(".")[0].replace("T", " ")
-
         item = {
             "id": p.get("id"),
             t("history.table_date"): created or "N/A",
@@ -62,7 +63,7 @@ def render_predictions_table(predictions, search_query, sort_by, crop_filter):
             "Confidence": p.get("confidence", 0),
             t("history.table_severity"): p.get("severity", "N/A"),
             t("history.table_risk"): p.get("risk_level", "N/A"),
-            t("history.table_farmer"): p.get("farmer_name", "N/A")
+            t("history.table_farmer"): p.get("farmer_name", "N/A"),
         }
         data.append(item)
 
@@ -94,16 +95,15 @@ def render_predictions_table(predictions, search_query, sort_by, crop_filter):
         confidence_pct = row["Confidence"] * 100 if isinstance(row["Confidence"], float) else row["Confidence"]
         severity = str(row[t("history.table_severity")])
         sev_color = {"Healthy": "#4caf50", "Mild": "#f1c40f", "Moderate": "#e67e22", "Severe": "#e53935"}.get(severity, "#888")
+        badge_class = "green" if severity in ("Healthy", "Mild") else "orange" if severity == "Moderate" else "red"
 
         st.markdown(f"""
-            <div class="metric-card" style="border-left-color: {sev_color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="metric-card" style="border-left-color:{sev_color};">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
                     <div>
                         <strong style="font-size: 1.1rem;">{row[t('history.table_crop')]}</strong> — {row[t('history.table_disease')]}
                     </div>
-                    <span class="badge badge-{'green' if severity=='Healthy' or severity=='Mild' else 'orange' if severity=='Moderate' else 'red'}">
-                        {severity}
-                    </span>
+                    <span class="badge badge-{badge_class}">{severity}</span>
                 </div>
                 <div style="display: flex; gap: 2rem; margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
                     <span>📅 {row[t('history.table_date')]}</span>
@@ -121,7 +121,7 @@ def render_delete_options(predictions):
     st.markdown("---")
     with st.expander(t("history.manage_records")):
         if predictions:
-            delete_id = st.number_input(t("history.delete_id"), min_value=1, step=1)
+            st.number_input(t("history.delete_id"), min_value=1, step=1)
             if st.button(t("history.btn_delete"), type="secondary", width='stretch'):
                 st.warning(t("history.delete_unavailable"))
 
@@ -133,7 +133,12 @@ def main():
     load_css()
     render_header()
 
-    db = get_db()
+    try:
+        db = get_db()
+    except Exception as e:
+        st.error(f"Failed to connect to database: {e}")
+        return
+
     search_query, sort_by, crop_filter = render_filters()
     predictions = db.get_all_predictions(limit=200)
     render_predictions_table(predictions, search_query, sort_by, crop_filter)
@@ -147,15 +152,18 @@ def main():
         if predictions and st.button(t("history.btn_export_csv"), width='stretch'):
             data = []
             for p in predictions:
+                created = p.get("created_at", "")
+                if created and isinstance(created, str) and "T" in created:
+                    created = created.split(".")[0].replace("T", " ")
                 data.append({
                     "ID": p.get("id"),
-                    "Date": p.get("created_at"),
+                    "Date": created,
                     "Crop": p.get("crop_name"),
                     "Disease": p.get("disease_name"),
                     "Confidence": p.get("confidence"),
                     "Severity": p.get("severity"),
                     "Risk": p.get("risk_level"),
-                    "Farmer": p.get("farmer_name")
+                    "Farmer": p.get("farmer_name"),
                 })
             df = pd.DataFrame(data)
             csv = df.to_csv(index=False)
@@ -164,7 +172,7 @@ def main():
                 data=csv,
                 file_name=f"disease_history_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                width='stretch'
+                width='stretch',
             )
     with col3:
         st.markdown("")

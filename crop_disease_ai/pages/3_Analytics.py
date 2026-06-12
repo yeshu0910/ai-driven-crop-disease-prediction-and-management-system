@@ -1,11 +1,10 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
 import sys
 from pathlib import Path
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
@@ -17,8 +16,10 @@ st.set_page_config(page_title="Analytics - Crop Disease AI", page_icon="📊", l
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
+    if css_path.exists():
+        with open(str(css_path)) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -39,7 +40,7 @@ def render_header():
 
 
 def render_summary_cards(stats):
-    cols = st.columns(5)
+    st.markdown('<div class="stat-grid">', unsafe_allow_html=True)
     metrics = [
         ("🔬", t("stats.total_scans"), stats.get("total_scans", 0), "#2e7d32"),
         ("✅", t("stats.healthy"), stats.get("healthy_scans", 0), "#4caf50"),
@@ -52,22 +53,20 @@ def render_summary_cards(stats):
         ("🌾", t("analytics.stat_crops_monitored"), stats.get("total_crops", 0), "#1976d2"),
         ("🦠", t("analytics.stat_common_disease"), stats.get("most_common_disease", "N/A"), "#e53935")
     ]
-    for i, (icon, label, value, color) in enumerate(metrics):
-        with cols[i]:
-            st.markdown(f"""
-                <div class="dashboard-card animate-in" style="animation-delay: {i*0.1}s;
-                     text-align: center;">
-                    <div style="font-size: 2rem; margin-bottom: 0.3rem;">{icon}</div>
-                    <div class="card-label">{label}</div>
-                    <div class="card-value" style="font-size: 1.4rem; color: {color};">{value}</div>
-                </div>
-            """, unsafe_allow_html=True)
+    for icon, label, value, color in metrics:
+        st.markdown(f"""
+            <div class="stat-card animate-in">
+                <div class="stat-icon">{icon}</div>
+                <div class="stat-label">{label}</div>
+                <div class="stat-value" style="font-size:1.2rem;color:{color};">{value}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_disease_frequency(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('analytics.disease_frequency')}</h3>", unsafe_allow_html=True)
     freq_data = db.get_disease_frequency(limit=15)
-
     if freq_data:
         df = pd.DataFrame(freq_data)
         fig = px.bar(
@@ -79,14 +78,16 @@ def render_disease_frequency(db):
                 for d in df["disease_name"]
             },
             template="plotly_white",
-            height=500
+            height=500,
         )
         fig.update_layout(
             showlegend=False,
             xaxis_title=t("stats.total_scans"),
             xaxis_title=t("analytics.chart_cases"),
             yaxis_title="",
-            margin=dict(l=10, r=10, t=10, b=10)
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         fig.update_yaxes(autorange="reversed")
         st.plotly_chart(fig, width='stretch')
@@ -97,7 +98,6 @@ def render_disease_frequency(db):
 def render_monthly_trends(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('analytics.monthly_trends')}</h3>", unsafe_allow_html=True)
     trends = db.get_monthly_trends(months=12)
-
     if trends:
         df = pd.DataFrame(trends)
         fig = go.Figure()
@@ -105,8 +105,8 @@ def render_monthly_trends(db):
             x=df["month"], y=df["total"],
             mode="lines+markers", name=t("stats.total_scans"),
             mode="lines+markers", name=t("analytics.chart_total_scans"),
-            line=dict(color="#2e7d32", width=3),
-            marker=dict(size=8)
+            line={"color": "#2e7d32", "width": 3},
+            marker={"size": 8},
         ))
         fig.add_trace(go.Bar(
             x=df["month"], y=df["healthy"],
@@ -125,8 +125,10 @@ def render_monthly_trends(db):
             template="plotly_white",
             hovermode="x",
             height=400,
-            margin=dict(l=10, r=10, t=10, b=10),
-            legend=dict(orientation="h", y=1.1)
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            legend={"orientation": "h", "y": 1.1},
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig, width='stretch')
     else:
@@ -144,7 +146,6 @@ def render_crop_health_pie(db):
     total = stats.get("total_scans", 0)
     healthy = stats.get("healthy_scans", 0)
     diseased = stats.get("diseased_scans", 0)
-
     if total > 0:
         fig = go.Figure(data=[go.Pie(
             labels=[t("stats.healthy"), t("stats.diseased")],
@@ -153,13 +154,14 @@ def render_crop_health_pie(db):
             marker_colors=["#4caf50", "#ff6f00"],
             textinfo="label+percent",
             hole=0.4,
-            pull=[0.05, 0]
+            pull=[0.05, 0],
         )])
         fig.update_layout(
             height=350,
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
             showlegend=True,
-            legend=dict(orientation="h", y=1.1)
+            legend={"orientation": "h", "y": 1.1},
+            paper_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig, width='stretch')
     else:
@@ -170,7 +172,6 @@ def render_crop_health_pie(db):
 def render_recent_detections(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('analytics.recent_detections')}</h3>", unsafe_allow_html=True)
     predictions = db.get_all_predictions(limit=20)
-
     if predictions:
         data = []
         for p in predictions:
@@ -204,7 +205,6 @@ def render_recent_detections(db):
 def render_analytics_overview(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('analytics.daily_overview')}</h3>", unsafe_allow_html=True)
     analytics_data = db.get_analytics(days=30)
-
     if analytics_data:
         df = pd.DataFrame(analytics_data)
         fig = go.Figure()
@@ -213,30 +213,32 @@ def render_analytics_overview(db):
             mode="lines+markers",
             name=t("stats.total_scans"),
             name=t("analytics.chart_total_scans"),
-            line=dict(color="#2e7d32", width=2),
+            line={"color": "#2e7d32", "width": 2},
             fill="tozeroy",
-            fillcolor="rgba(46,125,50,0.1)"
+            fillcolor="rgba(46,125,50,0.1)",
         ))
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["healthy_scans"],
             mode="lines+markers",
             name=t("stats.healthy"),
             name=t("analytics.chart_healthy"),
-            line=dict(color="#4caf50", width=2)
+            line={"color": "#4caf50", "width": 2}
         ))
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["diseased_scans"],
             mode="lines+markers",
             name=t("stats.diseased"),
             name=t("analytics.chart_diseased"),
-            line=dict(color="#ff6f00", width=2)
+            line={"color": "#ff6f00", "width": 2}
         ))
         fig.update_layout(
             template="plotly_white",
             hovermode="x",
             height=350,
-            margin=dict(l=10, r=10, t=10, b=10),
-            legend=dict(orientation="h", y=1.1)
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            legend={"orientation": "h", "y": 1.1},
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig, width='stretch')
     else:
@@ -251,8 +253,12 @@ def main():
     load_css()
     render_header()
 
-    db = get_db()
-    stats = db.get_summary_stats()
+    try:
+        db = get_db()
+        stats = db.get_summary_stats()
+    except Exception as e:
+        st.error(f"Failed to connect to database: {e}")
+        return
 
     render_summary_cards(stats)
 
@@ -272,12 +278,8 @@ def main():
         if stats["total_scans"] > 0:
             disease_pct = (stats["diseased_scans"] / stats["total_scans"]) * 100
             healthy_pct = (stats["healthy_scans"] / stats["total_scans"]) * 100
-
-            healthy_label = t("stats.healthy").lower()
-            diseased_label = t("stats.diseased").lower()
-
             st.markdown(f"""
-                <div class="dashboard-card">
+                <div class="card">
                     <div class="info-box {'green' if healthy_pct > 50 else 'orange'}">
                         <strong>{t('analytics.crop_health_rate').format(pct=healthy_pct)}</strong><br>
                         <strong>{t('analytics.disease_incidence').format(pct=disease_pct)}</strong>

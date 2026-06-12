@@ -75,8 +75,9 @@ def t(key, **kwargs):
 def translate_content_list(items, key_prefix):
     return [t(f"{key_prefix}.{item}") for item in items]
 from pathlib import Path
+from typing import Any
 
-_i18n_cache = {}
+_i18n_cache: dict[str, dict[str, Any]] = {}
 
 
 def _load_translations(lang):
@@ -90,7 +91,7 @@ def _load_translations(lang):
         file_path = i18n_dir / "en.json"
         lang = "en"
 
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         translations = json.load(f)
 
     _i18n_cache[lang] = translations

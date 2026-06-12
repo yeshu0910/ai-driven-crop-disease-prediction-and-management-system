@@ -1,10 +1,18 @@
+import logging
+
+import cv2
 import numpy as np
 import tensorflow as tf
-import cv2
-from pathlib import Path
-import json
-import logging
-from utils.config import MODEL_PATH, CLASS_INDICES_PATH, CONFIDENCE_THRESHOLD, CROP_CONFIDENCE_THRESHOLD, DISEASE_CLASSES, SUPPORTED_CROPS, IMG_SIZE
+
+from utils.config import (
+    CLASS_INDICES_PATH,
+    CONFIDENCE_THRESHOLD,
+    CROP_CONFIDENCE_THRESHOLD,
+    DISEASE_CLASSES,
+    IMG_SIZE,
+    MODEL_PATH,
+    SUPPORTED_CROPS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,33 +58,23 @@ class ModelHandler:
 
     def _validate_model_prediction(self, probs, predicted_idx, class_name):
         errors = []
-
         if predicted_idx not in self.class_names:
             errors.append(f"Index {predicted_idx} not in class_names map")
-
         if class_name and class_name not in DISEASE_CLASSES:
             errors.append(f"Class '{class_name}' not in DISEASE_CLASSES config")
-
         if self.class_indices and class_name:
             expected_idx = self.class_indices.get(class_name)
             if expected_idx is not None and expected_idx != predicted_idx:
-                errors.append(
-                    f"Index mismatch: predicted {predicted_idx}, "
-                    f"but {class_name} maps to {expected_idx}"
-                )
-
+                errors.append(f"Index mismatch: predicted {predicted_idx}, but {class_name} maps to {expected_idx}")
         entropy = -np.sum(probs * np.log(probs + 1e-10))
         max_entropy = np.log(len(probs))
         norm_entropy = entropy / max_entropy
-
         if norm_entropy > 0.95:
             errors.append(f"Near-uniform distribution (norm_entropy={norm_entropy:.3f})")
-
         sorted_probs = sorted(probs, reverse=True)
         margin = sorted_probs[0] - sorted_probs[1] if len(sorted_probs) > 1 else 0
         if margin < 0.01:
             errors.append(f"Negligible margin over 2nd: {margin:.4f}")
-
         return errors, norm_entropy, margin
 
     def predict(self, image_array, crop_hint=None):
@@ -85,7 +83,8 @@ class ModelHandler:
         crop_name_h, crop_confidence_h, top5_crops = crop_analysis
         all_crop_scores = {c: round(s, 1) for c, s in top5_crops}
 
-        DISEASE_UNKNOWN_THRESHOLD = 0.90
+        disease_unknown_threshold = 0.75
+        model_reliable_threshold = 0.85
 
         effective_crop = crop_name_h
         if crop_hint and crop_hint in SUPPORTED_CROPS:
@@ -93,10 +92,7 @@ class ModelHandler:
             crop_confidence_h = 1.0
         elif crop_confidence_h < CROP_CONFIDENCE_THRESHOLD:
             crop_confidence_h = round(crop_confidence_h, 3)
-            logger.warning(
-                f"Crop detection confidence {crop_confidence_h:.3f} < {CROP_CONFIDENCE_THRESHOLD}, "
-                f"top crops: {all_crop_scores}"
-            )
+            logger.warning(f"Crop detection confidence {crop_confidence_h:.3f} < {CROP_CONFIDENCE_THRESHOLD}, top crops: {all_crop_scores}")
             return self._build_unknown_result(top5_crops, all_scores=all_crop_scores)
 
         model_predictions = None
@@ -109,7 +105,6 @@ class ModelHandler:
                 model_raw_probs = self.model.predict(image_array, verbose=0)
                 model_predictions = model_raw_probs[0]
                 model_predicted_idx = int(np.argmax(model_predictions))
-
                 if self.class_names:
                     model_class_name = self.class_names.get(model_predicted_idx, f"Class_{model_predicted_idx}")
                 else:
@@ -120,10 +115,21 @@ class ModelHandler:
         best_disease = None
         best_confidence = 0.0
         top_5_predictions = []
+        raw_model_all = []
 
         if model_predictions is not None and self.class_names:
             all_sorted = np.argsort(model_predictions)[::-1]
             all_indices = [int(i) for i in all_sorted]
+
+            raw_model_all = [
+                {
+                    "class_name": self.class_names.get(int(i), f"Class_{int(i)}"),
+                    "disease_name": DISEASE_CLASSES.get(self.class_names.get(int(i), ""), self.class_names.get(int(i), f"Class_{int(i)}")),
+                    "confidence": float(model_predictions[int(i)]),
+                    "index": int(i)
+                }
+                for i in all_indices
+            ]
 
             filtered = []
             for idx in all_indices:
@@ -145,31 +151,47 @@ class ModelHandler:
                 best = filtered[0]
                 best_disease = best["disease_name"]
                 best_confidence = best["confidence"]
-                top_5_predictions = filtered[:5]
-            else:
-                best_disease = None
-                best_confidence = 0.0
 
-        if best_disease is None or best_confidence < DISEASE_UNKNOWN_THRESHOLD:
+            top_5_predictions = raw_model_all[:5]
+
+        model_is_reliable = (
+            model_predictions is not None
+            and best_confidence >= model_reliable_threshold
+            and best_disease is not None
+        )
+
+        if not model_is_reliable:
             feature_disease, feature_conf, feature_healthy = self._detect_disease_from_features(
                 features, effective_crop
             )
             if feature_conf > best_confidence:
                 best_disease = feature_disease
                 best_confidence = feature_conf
-                top_5_predictions = []
+                top_5_predictions = raw_model_all[:5] if raw_model_all else []
 
-        if best_disease is None:
-            return self._build_unknown_result(top5_crops, effective_crop)
+        if best_disease is None or best_confidence < disease_unknown_threshold:
+            return self._build_unknown_result(
+                top5_crops, effective_crop,
+                model_predictions=model_predictions,
+                all_scores=all_crop_scores
+            )
 
-        is_low_confidence = False
-        if best_confidence < DISEASE_UNKNOWN_THRESHOLD:
-            is_low_confidence = True
-
+        is_low_confidence = best_confidence < CONFIDENCE_THRESHOLD
         is_healthy = "healthy" in best_disease.lower()
 
         if not top_5_predictions:
-            top_5_predictions = self._build_disease_list_for_crop(effective_crop, best_disease, features)
+            if raw_model_all:
+                top_5_predictions = raw_model_all[:5]
+            else:
+                top_5_predictions = self._build_disease_list_for_crop(effective_crop, best_disease, features)
+
+        raw_top5 = raw_model_all[:5] if raw_model_all else None
+
+        validation_errors, norm_entropy, margin = (
+            self._validate_model_prediction(model_predictions, model_predicted_idx, model_class_name)
+            if model_predictions is not None and model_class_name
+            else ([], 0.0, 0.0)
+        )
 
         result = {
             "success": True,
@@ -180,35 +202,26 @@ class ModelHandler:
             "is_low_confidence": is_low_confidence,
             "class_index": 0,
             "top_3_predictions": top_5_predictions[:3],
-            "top_5_predictions": top_5_predictions,
+            "top_5_predictions": top_5_predictions[:5],
             "all_confidences": [],
-            "model_used": "trained",
+            "model_used": "trained" if self.model else "image_analysis",
             "crop_confidence": round(crop_confidence_h, 3),
             "top_5_crops": [{"crop": c, "score": round(s, 1)} for c, s in top5_crops],
             "prediction_quality": {
-                "norm_entropy": 0,
-                "margin": 0,
-                "validation_errors": []
-            }
+                "norm_entropy": round(norm_entropy, 4) if norm_entropy else 0,
+                "margin": round(margin, 4) if margin else 0,
+                "validation_errors": validation_errors
+            },
+            "raw_model_top5": raw_top5,
         }
 
-        if model_predictions is not None and self.class_names:
+        if model_predictions is not None:
             result["all_confidences"] = model_predictions.tolist() if hasattr(model_predictions, 'tolist') else list(model_predictions)
-            top_n_idx = np.argsort(model_predictions)[-5:][::-1]
-            result["raw_model_top5"] = []
-            for idx in top_n_idx:
-                cn = self.class_names.get(int(idx), f"Class_{int(idx)}")
-                dn = DISEASE_CLASSES.get(cn, cn)
-                result["raw_model_top5"].append({
-                    "class_name": cn,
-                    "disease_name": dn,
-                    "confidence": float(model_predictions[int(idx)]),
-                    "index": int(idx)
-                })
+            result["class_index"] = int(model_predicted_idx)
 
         return result
 
-    def _build_unknown_result(self, top5_crops, crop_name=None, all_scores=None):
+    def _build_unknown_result(self, top5_crops, crop_name=None, all_scores=None, model_predictions=None):
         if crop_name:
             disease_name = f"{crop_name} (Uncertain)"
             crop_display = crop_name
@@ -219,45 +232,46 @@ class ModelHandler:
             crop_display = "Unknown"
             confidence = 0.0
             model_used = "unknown_crop"
+
+        top5_list = []
+        if model_predictions is not None and self.class_names:
+            all_sorted = np.argsort(model_predictions)[::-1]
+            for i in all_sorted[:5]:
+                cn = self.class_names.get(int(i), f"Class_{int(i)}")
+                dn = DISEASE_CLASSES.get(cn, cn)
+                top5_list.append({
+                    "class_name": cn,
+                    "disease_name": dn,
+                    "confidence": float(model_predictions[int(i)]),
+                    "index": int(i)
+                })
+
+        while len(top5_list) < 5:
+            top5_list.append({
+                "class_name": "unknown",
+                "disease_name": disease_name,
+                "confidence": 0.0
+            })
+
         result = {
             "success": True,
             "disease_name": disease_name,
             "crop_name": crop_display,
             "confidence": confidence,
             "is_healthy": False,
-            "is_low_confidence": False,
+            "is_low_confidence": True,
             "class_index": 0,
-            "top_3_predictions": [
-                {"class_name": "unknown", "disease_name": disease_name, "confidence": 0.0}
-            ] * 3,
-            "top_5_predictions": [
-                {"class_name": "unknown", "disease_name": disease_name, "confidence": 0.0}
-            ] * 5,
-            "all_confidences": [],
+            "top_3_predictions": top5_list[:3],
+            "top_5_predictions": top5_list[:5],
+            "all_confidences": model_predictions.tolist() if model_predictions is not None else [],
             "model_used": model_used,
             "crop_confidence": 0.0,
             "top_5_crops": [{"crop": c, "score": round(s, 1)} for c, s in top5_crops],
+            "raw_model_top5": top5_list[:5] if model_predictions is not None else None,
         }
         if all_scores:
             result["all_crop_scores"] = all_scores
         return result
-
-    def _build_fallback_result(self, crop_name, disease_name, confidence, is_healthy, top5_crops, features):
-        top_5 = self._build_disease_list_for_crop(crop_name, disease_name, features)
-        return {
-            "success": True,
-            "disease_name": disease_name,
-            "crop_name": crop_name,
-            "confidence": min(confidence, 0.98),
-            "is_healthy": is_healthy,
-            "class_index": 0,
-            "top_3_predictions": top_5[:3],
-            "top_5_predictions": top_5,
-            "all_confidences": [],
-            "model_used": "image_analysis",
-            "crop_confidence": 0.0,
-            "top_5_crops": [{"crop": c, "score": round(s, 1)} for c, s in top5_crops],
-        }
 
     def _build_disease_list_for_crop(self, crop_name, primary_disease, features):
         crop_disease_list = [
@@ -306,9 +320,7 @@ class ModelHandler:
         if validation_errors and len(validation_errors) > 0:
             return False
         sorted_probs = sorted(probs, reverse=True)
-        if len(sorted_probs) > 1 and (sorted_probs[0] - sorted_probs[1]) < 0.05:
-            return False
-        return True
+        return not (len(sorted_probs) > 1 and sorted_probs[0] - sorted_probs[1] < 0.05)
 
     def _analyze_image(self, image_array):
         img = image_array[0] if image_array.shape[0] == 1 and len(image_array.shape) == 4 else image_array
@@ -379,32 +391,27 @@ class ModelHandler:
             scores[crop] = 0.0
 
         if green_pct > 60:
-            scores["Rice"] += 20
-            scores["Wheat"] += 18
-            scores["Sugarcane"] += 18
-            scores["Corn"] += 16
+            for c in ["Rice", "Wheat", "Sugarcane", "Corn"]:
+                scores[c] += 18
             scores["Banana"] += 8
             scores["Mango"] += 6
         elif green_pct > 45:
-            scores["Soybean"] += 15
-            scores["Potato"] += 14
-            scores["Cotton"] += 12
-            scores["Tomato"] += 10
-            scores["Banana"] += 10
+            for c in ["Soybean", "Potato", "Cotton"]:
+                scores[c] += 14
+            for c in ["Tomato", "Banana"]:
+                scores[c] += 10
             scores["Mango"] += 8
             scores["Apple"] += 6
         elif green_pct > 30:
-            scores["Chili"] += 10
-            scores["Groundnut"] += 10
-            scores["Sunflower"] += 8
-            scores["Mango"] += 8
-            scores["Apple"] += 6
-            scores["Grapes"] += 6
+            for c in ["Chili", "Groundnut"]:
+                scores[c] += 10
+            for c in ["Sunflower", "Mango"]:
+                scores[c] += 8
+            for c in ["Apple", "Grapes"]:
+                scores[c] += 6
         else:
-            scores["Apple"] += 10
-            scores["Mango"] += 10
-            scores["Banana"] += 10
-            scores["Grapes"] += 10
+            for c in ["Apple", "Mango", "Banana", "Grapes"]:
+                scores[c] += 10
 
         mean_hue_scaled = mean_hue / 2.0
         scores["Rice"] += max(0, 10 - abs(mean_hue_scaled - 42))
@@ -413,16 +420,14 @@ class ModelHandler:
         scores["Tomato"] += max(0, 10 - abs(mean_hue_scaled - 45))
 
         if edge_density > 18:
-            scores["Corn"] += 8
-            scores["Wheat"] += 7
-            scores["Rice"] += 6
-            scores["Sugarcane"] += 5
+            for c in ["Corn", "Wheat", "Rice", "Sugarcane"]:
+                scores[c] += 6
         elif edge_density > 10:
-            scores["Soybean"] += 5
-            scores["Potato"] += 5
+            for c in ["Soybean", "Potato"]:
+                scores[c] += 5
         else:
-            scores["Banana"] += 8
-            scores["Mango"] += 8
+            for c in ["Banana", "Mango"]:
+                scores[c] += 8
             scores["Apple"] += 6
 
         if mean_val > 160:
@@ -440,8 +445,8 @@ class ModelHandler:
             scores["Wheat"] += 4
 
         if features["mean_a"] > 5:
-            scores["Apple"] += 5
-            scores["Mango"] += 4
+            for c in ["Apple", "Mango"]:
+                scores[c] += 5
             scores["Tomato"] += 3
 
         if features["mean_b"] > 15:
@@ -450,15 +455,13 @@ class ModelHandler:
 
         white_pct = features.get("white_pct", 0)
         if white_pct > 10:
-            scores["Mango"] += 6
-            scores["Apple"] += 5
-            scores["Grapes"] += 5
+            for c in ["Mango", "Apple", "Grapes"]:
+                scores[c] += 5
             scores["Tomato"] += 4
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         top_crop = sorted_scores[0][0]
         top_score = sorted_scores[0][1]
-        second_score = sorted_scores[1][1] if len(sorted_scores) > 1 else 0
 
         crop_confidence = 0.0
         total = sum(s for _, s in sorted_scores[:5])
@@ -473,11 +476,8 @@ class ModelHandler:
         brown_pct = features.get("brown_pct", 0)
         dark_pct = features.get("dark_pct", 0)
         white_pct = features.get("white_pct", 0)
-        edge_density = features.get("edge_density", 0)
 
-        disease_score = yellow_pct * 0.5 + brown_pct * 0.8 + dark_pct * 0.3 + white_pct * 0.4
-
-        health_score = green_pct * 0.6 + max(0, 100 - disease_score) * 0.4
+        yellow_pct * 0.5 + brown_pct * 0.8 + dark_pct * 0.3 + white_pct * 0.4
 
         crop_disease_list = [
             v for k, v in DISEASE_CLASSES.items()
@@ -489,43 +489,34 @@ class ModelHandler:
 
         healthy_name = f"{crop_name} Healthy"
         has_healthy = healthy_name in crop_disease_list
-
         total_abnormal = yellow_pct + brown_pct + dark_pct + white_pct
 
         if total_abnormal < 10:
             if has_healthy:
                 base_conf = 0.70 + (green_pct / 100) * 0.25
-                conf = min(base_conf, 0.98)
-                return healthy_name, conf, True
-            else:
-                return crop_disease_list[0], 0.5, False
+                return healthy_name, min(base_conf, 0.98), True
+            return crop_disease_list[0], 0.5, False
 
         if white_pct > 10:
             keywords = ["mildew", "powdery", "white", "mold"]
-            candidates = [
-                d for d in crop_disease_list if d != healthy_name
-                and any(kw in d.lower() for kw in keywords)
-            ]
+            candidates = [d for d in crop_disease_list if d != healthy_name
+                          and any(kw in d.lower() for kw in keywords)]
             if candidates:
                 conf = min(0.50 + white_pct / 100, 0.92)
                 return candidates[0], conf, False
 
         if brown_pct > 12 or dark_pct > 15:
             keywords = ["blight", "spot", "rust", "rot", "scab", "blast"]
-            candidates = [
-                d for d in crop_disease_list if d != healthy_name
-                and any(kw in d.lower() for kw in keywords)
-            ]
+            candidates = [d for d in crop_disease_list if d != healthy_name
+                          and any(kw in d.lower() for kw in keywords)]
             if candidates:
                 conf = min(0.50 + total_abnormal / 150, 0.92)
                 return candidates[0], conf, False
 
         if yellow_pct > brown_pct and yellow_pct > 12:
             keywords = ["yellow", "mosaic", "curl", "virus", "mildew"]
-            candidates = [
-                d for d in crop_disease_list if d != healthy_name
-                and any(kw in d.lower() for kw in keywords)
-            ]
+            candidates = [d for d in crop_disease_list if d != healthy_name
+                          and any(kw in d.lower() for kw in keywords)]
             if candidates:
                 conf = min(0.50 + yellow_pct / 100, 0.88)
                 return candidates[0], conf, False
@@ -549,72 +540,34 @@ class ModelHandler:
         crop_name_h, crop_confidence_h, top5_crops = crop_analysis
         crop_name = crop_name_h
 
-        UNKNOWN_THRESHOLD = 0.20
+        unknown_threshold = 0.20
 
-        if crop_confidence_h < UNKNOWN_THRESHOLD:
+        if crop_confidence_h < unknown_threshold:
             crop_name = "Unknown"
             disease_name = "Unknown Crop"
             confidence = 0.0
             is_healthy = False
             top_5_predictions = [
-                {"class_name": "unknown", "disease_name": "Unknown Crop",
-                 "confidence": 0.0}
+                {"class_name": "unknown", "disease_name": "Unknown Crop", "confidence": 0.0}
                 for _ in range(5)
             ]
             top_3_predictions = top_5_predictions[:3]
             all_conf = [0.0] * len(DISEASE_CLASSES)
             model_used = "unknown_crop"
         else:
-            disease_name, confidence, is_healthy = self._detect_disease_from_features(
-                features, crop_name_h
-            )
-
+            disease_name, confidence, is_healthy = self._detect_disease_from_features(features, crop_name_h)
             if confidence < CONFIDENCE_THRESHOLD:
                 disease_name = "Inconclusive"
                 model_used = "inconclusive"
             else:
                 model_used = "image_analysis"
 
-            crop_disease_list = [
+            [
                 v for k, v in DISEASE_CLASSES.items()
                 if v.startswith(crop_name_h)
             ]
-            top_5_predictions = []
-
-            top_5_predictions.append({
-                "class_name": f"{crop_name_h}_primary",
-                "disease_name": disease_name,
-                "confidence": confidence
-            })
-
-            healthy_name = f"{crop_name_h} Healthy"
-            if healthy_name in crop_disease_list and healthy_name != disease_name:
-                top_5_predictions.append({
-                    "class_name": f"{crop_name_h}_healthy",
-                    "disease_name": healthy_name,
-                    "confidence": max(0.05, (100 - features.get("brown_pct", 0)) / 200)
-                })
-
-            for other in crop_disease_list:
-                if len(top_5_predictions) >= 5:
-                    break
-                dn = other
-                if dn != disease_name and dn != healthy_name:
-                    top_5_predictions.append({
-                        "class_name": f"{crop_name_h}_other",
-                        "disease_name": dn,
-                        "confidence": confidence * (0.3 + features.get("brown_pct", 0) / 300)
-                    })
-
-            while len(top_5_predictions) < 5:
-                top_5_predictions.append({
-                    "class_name": f"{crop_name_h}_alt",
-                    "disease_name": f"{crop_name_h} (alternative)",
-                    "confidence": 0.01
-                })
-
+            top_5_predictions = self._build_disease_list_for_crop(crop_name_h, disease_name, features)
             top_3_predictions = top_5_predictions[:3]
-
             all_conf = [0.001] * len(DISEASE_CLASSES)
             if top_5_predictions:
                 all_conf[0] = confidence
@@ -631,36 +584,29 @@ class ModelHandler:
             "all_confidences": all_conf,
             "crop_confidence": round(crop_confidence_h, 3),
             "top_5_crops": [{"crop": c, "score": round(s, 1)} for c, s in top5_crops],
-            "model_used": model_used
+            "model_used": model_used,
         }
 
         if raw_predictions is not None and raw_predicted_idx is not None:
             result["raw_model_index"] = int(raw_predicted_idx)
             result["raw_model_confidences"] = raw_predictions[0].tolist()
-
             if self.class_names:
-                raw_class_name = self.class_names.get(
-                    raw_predicted_idx, f"Class_{raw_predicted_idx}"
-                )
+                raw_class_name = self.class_names.get(raw_predicted_idx, f"Class_{raw_predicted_idx}")
                 result["raw_model_class"] = raw_class_name
-                result["raw_model_disease"] = DISEASE_CLASSES.get(
-                    raw_class_name, raw_class_name
-                )
-                result["raw_model_confidence"] = float(
-                    raw_predictions[0][raw_predicted_idx]
-                )
-
+                result["raw_model_disease"] = DISEASE_CLASSES.get(raw_class_name, raw_class_name)
+                result["raw_model_confidence"] = float(raw_predictions[0][raw_predicted_idx])
             top_n_idx = np.argsort(raw_predictions[0])[-5:][::-1]
-            result["raw_model_top5"] = []
+            raw_top5 = []
             for idx in top_n_idx:
                 cn = self.class_names.get(idx, f"Class_{idx}") if self.class_names else f"Class_{idx}"
                 dn = DISEASE_CLASSES.get(cn, cn)
-                result["raw_model_top5"].append({
+                raw_top5.append({
                     "class_name": cn,
                     "disease_name": dn,
                     "confidence": float(raw_predictions[0][idx]),
                     "index": int(idx)
                 })
+            result["raw_model_top5"] = raw_top5
 
         return result
 
@@ -676,7 +622,7 @@ class ModelHandler:
             "is_confident": crop_confidence >= CROP_CONFIDENCE_THRESHOLD,
             "top_candidates": [{"crop": c, "score": round(s, 1), "pct": all_pcts.get(c, 0)} for c, s in top5],
             "all_scores": all_scores,
-            "all_percentages": all_pcts
+            "all_percentages": all_pcts,
         }
 
     def detect_crop(self, image_array):
@@ -686,7 +632,7 @@ class ModelHandler:
             "crop_name": crop_name,
             "confidence": round(crop_confidence, 3),
             "top_candidates": [{"crop": c, "score": round(s, 1)} for c, s in top5],
-            "image_features": {k: round(v, 1) for k, v in features.items()}
+            "image_features": {k: round(v, 1) for k, v in features.items()},
         }
 
     @staticmethod
@@ -701,12 +647,7 @@ class ModelHandler:
                 "display_name": display_name,
                 "is_healthy": "healthy" in display_name.lower()
             })
-
-        report = {
-            "total_classes": len(DISEASE_CLASSES),
-            "total_crops": len(crops),
-            "crops": {}
-        }
+        report = {"total_classes": len(DISEASE_CLASSES), "total_crops": len(crops), "crops": {}}
         for crop_name in sorted(crops.keys()):
             diseases = crops[crop_name]
             healthy_count = sum(1 for d in diseases if d["is_healthy"])
@@ -717,17 +658,9 @@ class ModelHandler:
                 "healthy_variants": healthy_count,
                 "entries": diseases
             }
-
         report["supported_crops"] = sorted(crops.keys())
-        report["all_diseases"] = [
-            d["display_name"] for c in sorted(crops.keys())
-            for d in crops[c] if not d["is_healthy"]
-        ]
-        report["all_healthy"] = [
-            d["display_name"] for c in sorted(crops.keys())
-            for d in crops[c] if d["is_healthy"]
-        ]
-
+        report["all_diseases"] = [d["display_name"] for c in sorted(crops.keys()) for d in crops[c] if not d["is_healthy"]]
+        report["all_healthy"] = [d["display_name"] for c in sorted(crops.keys()) for d in crops[c] if d["is_healthy"]]
         return report
 
     def is_model_loaded(self):

@@ -1,17 +1,18 @@
 """
 Model evaluation script for crop disease classification.
 """
-import os
 import sys
+from pathlib import Path
+
 import numpy as np
 import tensorflow as tf
-from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.config import MODELS_DIR, DATA_DIR, IMG_SIZE, DISEASE_CLASSES
-
 import logging
+
+from utils.config import DATA_DIR, DISEASE_CLASSES, IMG_SIZE, MODELS_DIR
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,18 @@ def evaluate_model():
                                            zero_division=0)
             logger.info(f"\nClassification Report:\n{report}")
             metrics["classification_report"] = report
+
+            # Disease-wise accuracy
+            cm = confusion_matrix(y_true, y_pred_classes)
+            disease_accuracy = {}
+            for i, name in enumerate(target_names):
+                if i < cm.shape[0] and cm[i].sum() > 0:
+                    acc = cm[i, i] / cm[i].sum() * 100
+                    disease_accuracy[name] = round(acc, 2)
+            logger.info("\nDisease-wise Accuracy:")
+            for name, acc in sorted(disease_accuracy.items(), key=lambda x: x[1]):
+                logger.info(f"  {name}: {acc:.2f}%")
+            metrics["disease_accuracy"] = disease_accuracy
     else:
         logger.warning("Validation directory not found. Running basic evaluation...")
         dummy_data = np.random.rand(32, IMG_SIZE, IMG_SIZE, 3)

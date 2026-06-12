@@ -1,55 +1,26 @@
 # Project Constitution
 
-## Project Name
-AI-Driven Crop Disease Prediction and Management System
-
 ## Purpose
-To develop an AI-powered system that detects crop diseases from images and provides management recommendations to farmers, reducing crop loss and improving agricultural productivity.
+This project builds an AI-Driven Crop Disease Prediction and Management System. Every feature must support farmers and agronomists in identifying, diagnosing, and managing crop diseases using machine learning and reliable data.
 
 ## Core Principles
-
-### 1. Accuracy First
-- ML models must achieve minimum 85% accuracy on test datasets
-- Continuous model evaluation and retraining pipeline
-- Clear confidence scores with all predictions
-
-### 2. Farmer-Centric Design
-- Simple, intuitive mobile-first interface
-- Support for multiple languages (starting with English and local languages)
-- Offline capability for areas with poor connectivity
-- Low-bandwidth optimization
-
-### 3. Data Privacy & Security
-- Farmer data collected with explicit consent
-- End-to-end encryption for all data transmission
-- Compliance with relevant data protection regulations
-- No sharing of identifiable farmer data with third parties without consent
-
-### 4. Open & Extensible
-- Modular architecture allowing easy addition of new crop types and diseases
-- Open API for integration with other agricultural systems
-- Community contribution guidelines for model improvements
-
-### 5. Evidence-Based Recommendations
-- All management recommendations grounded in agricultural science
-- Clear sourcing of treatment information
-- Integration with local agricultural extension services where possible
-
-## Stakeholders
-- Small and marginal farmers (primary users)
-- Agricultural scientists and researchers
-- Government agricultural departments
-- NGOs working in agricultural development
-
-## Success Metrics
-- Disease detection accuracy > 90%
-- User adoption rate among target farming communities
-- Reduction in crop loss due to early disease detection
-- Farmer satisfaction scores
+- **Farmer-First Design**: Every feature must prioritize usability in real agricultural settings with limited connectivity.
+- **Data Integrity**: Crop and disease data must be accurate, reproducible, and version-controlled.
+- **AI Transparency**: ML predictions must include confidence scores and evidence-based explanations.
+- **Security & Privacy**: Farmer and farm data must be protected with end-to-end encryption and role-based access.
+- **Interoperability**: System must integrate with IoT sensors, weather APIs, and farm management platforms via open standards.
+- **Open Development**: All specs, plans, and tasks must be documented in this Spec-Kit structure.
+- **Testing Rigor**: ML models require statistical validation; APIs require integration tests; minimum 80% code coverage.
 
 ## Governance
-This constitution guides all technical and product decisions for the AI-Driven Crop Disease Prediction and Management System. All specifications, designs, and implementations must align with these principles.
+- All features require a `spec.md` approved before implementation.
+- Architecture decisions are recorded in `plan.md`.
+- Work is tracked in `tasks.md` with explicit status columns.
+- Breaking changes to the ML pipeline require a migration plan.
+- No secrets in code, `.env`, or documentation.
 
----
-*Constitution Version: 1.0*
-*Effective Date: 2026-06-11*
+## Tech Stack Constraints
+- Backend: Python 3.10+, FastAPI, PostgreSQL
+- ML: PyTorch, ONNX for model serving
+- Mobile: Flutter (iOS/Android)
+- Infra: Docker, GitLab CI/CD, Kubernetes

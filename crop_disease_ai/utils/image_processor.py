@@ -1,8 +1,10 @@
+import base64
+import io
+
 import cv2
 import numpy as np
 from PIL import Image
-import io
-import base64
+
 from utils.config import IMG_SIZE
 
 
@@ -20,11 +22,15 @@ class ImageProcessor:
 
     @staticmethod
     def preprocess_image(image_np):
+        if image_np is None or image_np.size == 0:
+            raise ValueError("Empty image provided")
+        if len(image_np.shape) not in (2, 3):
+            raise ValueError(f"Unexpected image dimensions: {image_np.shape}")
         if image_np.shape[-1] == 4:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2RGB)
         elif len(image_np.shape) == 2:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
-        resized = cv2.resize(image_np, (IMG_SIZE, IMG_SIZE))
+        resized = cv2.resize(image_np, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LINEAR)
         normalized = resized.astype(np.float32) / 255.0
         return normalized
 
@@ -44,8 +50,7 @@ class ImageProcessor:
         if prediction_mask is None:
             gray = cv2.cvtColor(resized, cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            thresh = cv2.threshold(blurred, 0, 255,
-                                   cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         else:
             thresh = prediction_mask
 
@@ -57,7 +62,6 @@ class ImageProcessor:
         heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
 
         overlay = cv2.addWeighted(resized, 0.6, heatmap, 0.4, 0)
-
         return overlay, heatmap, thresh
 
     @staticmethod
@@ -90,17 +94,13 @@ class ImageProcessor:
         infection_pixels = np.count_nonzero(combined_mask)
         total_pixels = IMG_SIZE * IMG_SIZE
         infection_percentage = (infection_pixels / total_pixels) * 100
-
         infection_percentage = min(infection_percentage, 100.0)
 
         return infection_percentage, combined_mask
 
     @staticmethod
     def detect_edges(image_np):
-        if len(image_np.shape) == 3:
-            gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-        else:
-            gray = image_np
+        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY) if len(image_np.shape) == 3 else image_np
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blurred, 50, 150)
         return edges
@@ -133,13 +133,17 @@ class ImageProcessor:
     def validate_image(uploaded_file):
         if uploaded_file is None:
             return False, "No file provided"
-        allowed_types = ["image/jpeg", "image/png", "image/jpg",
-                         "image/webp", "image/tiff"]
+        allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/tiff"]
         if uploaded_file.type not in allowed_types:
-            return False, f"Invalid file type: {uploaded_file.type}. Allowed: {', '.join(allowed_types)}"
+            return False, f"Invalid file type: {uploaded_file.type}. Allowed: jpg, png, webp, tiff"
         max_size = 10 * 1024 * 1024
         if len(uploaded_file.getvalue()) > max_size:
-            return False, f"File too large. Maximum size: 10MB"
+            return False, "File too large. Maximum size: 10MB"
+        try:
+            img = Image.open(io.BytesIO(uploaded_file.getvalue()))
+            img.verify()
+        except Exception:
+            return False, "Invalid or corrupted image file"
         return True, "Valid image"
 
     @staticmethod
@@ -147,6 +151,7 @@ class ImageProcessor:
         issues = []
         if image_array.size == 0:
             issues.append("Empty image array")
+            return issues
         if len(image_array.shape) not in (2, 3, 4):
             issues.append(f"Unexpected dimensions: {image_array.shape}")
         if image_array.shape[-1] not in (1, 3, 4):
