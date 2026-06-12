@@ -1,8 +1,9 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
 import sys
+from datetime import datetime
 from pathlib import Path
+
+import pandas as pd
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -54,7 +55,7 @@ def render_predictions_table(predictions, search_query, sort_by, crop_filter):
         created = p.get("created_at", "")
         if created and isinstance(created, str) and "T" in created:
             created = created.split(".")[0].replace("T", " ")
-        data.append({
+        item = {
             "id": p.get("id"),
             t("history.table_date"): created or "N/A",
             t("history.table_crop"): p.get("crop_name", "N/A"),
@@ -62,7 +63,7 @@ def render_predictions_table(predictions, search_query, sort_by, crop_filter):
             "Confidence": p.get("confidence", 0),
             t("history.table_severity"): p.get("severity", "N/A"),
             t("history.table_risk"): p.get("risk_level", "N/A"),
-            t("history.table_farmer"): p.get("farmer_name", "N/A")
+            t("history.table_farmer"): p.get("farmer_name", "N/A"),
         }
         data.append(item)
 
@@ -120,7 +121,7 @@ def render_delete_options(predictions):
     st.markdown("---")
     with st.expander(t("history.manage_records")):
         if predictions:
-            delete_id = st.number_input(t("history.delete_id"), min_value=1, step=1)
+            st.number_input(t("history.delete_id"), min_value=1, step=1)
             if st.button(t("history.btn_delete"), type="secondary", width='stretch'):
                 st.warning(t("history.delete_unavailable"))
 

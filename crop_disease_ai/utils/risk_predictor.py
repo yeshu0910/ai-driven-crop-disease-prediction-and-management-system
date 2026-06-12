@@ -1,6 +1,6 @@
+from datetime import datetime
+
 import numpy as np
-from datetime import datetime, timedelta
-from utils.config import SUPPORTED_CROPS
 
 
 class RiskPredictor:
@@ -140,7 +140,7 @@ class RiskPredictor:
             risk_score += 20 * crop_params["rain_sensitivity"]
             risk_factors.append({
                 "factor": "rain",
-                "detail": f"Rain expected - creates favorable conditions for infection"
+                "detail": "Rain expected - creates favorable conditions for infection"
             })
 
         if current_disease and "healthy" not in current_disease.lower():

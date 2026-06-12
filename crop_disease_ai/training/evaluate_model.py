@@ -1,17 +1,18 @@
 """
 Model evaluation script for crop disease classification.
 """
-import os
 import sys
+from pathlib import Path
+
 import numpy as np
 import tensorflow as tf
-from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.config import MODELS_DIR, DATA_DIR, IMG_SIZE, DISEASE_CLASSES
-
 import logging
+
+from utils.config import DATA_DIR, DISEASE_CLASSES, IMG_SIZE, MODELS_DIR
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

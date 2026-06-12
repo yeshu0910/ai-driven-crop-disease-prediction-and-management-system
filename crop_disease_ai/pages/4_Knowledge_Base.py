@@ -1,6 +1,7 @@
-import streamlit as st
 import sys
 from pathlib import Path
+
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -37,9 +38,9 @@ def render_search_and_filter(kb):
         search_query = st.text_input(t("kb.search_label"), placeholder=t("kb.search_placeholder"))
     with col2:
         all_diseases = kb.get_all_diseases()
-        crop_names = sorted(set(
+        crop_names = sorted({
             name.split(" ")[0] for name in all_diseases if " " in name
-        ))
+        })
         crop_filter = st.selectbox(t("kb.filter_label"), [t("kb.filter_all")] + crop_names)
     return search_query, crop_filter
 

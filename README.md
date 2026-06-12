@@ -4,6 +4,70 @@
 
 ## Getting started
 
+This project is a Streamlit-based AI-driven crop disease prediction and management system with a modular Python AI provider layer.
+
+### AI provider architecture
+
+All generative AI features call the unified layer in `crop_disease_ai/ai/`:
+
+```text
+ai/
+├── provider_manager.py
+├── local_provider.py
+├── cloud_provider.py
+├── model_router.py
+└── settings.py
+```
+
+Supported AI modes:
+
+- Local Ollama: `provider=ollama`, `mode=local`, default endpoint `http://localhost:11434/api/generate`
+- BYOK cloud: OpenAI, Anthropic, Gemini, Groq, Together AI, OpenRouter, HuggingFace Inference API, or a custom endpoint
+- Auto mode: cloud when an API key is available, otherwise local Ollama
+- Cloud fallback: local Ollama when `enable_local_fallback=true`
+
+See `docs/ai-provider-architecture.md` for API examples and provider details.
+
+### Local Ollama setup
+
+```bash
+ollama serve
+ollama pull llama3
+ollama pull mistral
+```
+
+### Run the app
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -e .
+streamlit run crop_disease_ai/app.py
+```
+
+### Environment defaults
+
+Copy `.env.example` to `.env` and set only non-secret defaults you need:
+
+```bash
+AI_PROVIDER=ollama
+AI_PROVIDER_MODE=local
+AI_MODEL=llama3
+AI_BASE_URL=http://localhost:11434
+AI_ENABLE_LOCAL_FALLBACK=true
+AI_CACHE_ENABLED=true
+```
+
+Never commit real API keys. Use the AI Settings sidebar to enter BYOK keys into Streamlit session state, or save an encrypted local config backup with a private encryption key.
+
+### Validation
+
+```bash
+pytest
+ruff check .
+mypy .
+```
+
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
 Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!

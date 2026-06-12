@@ -1,8 +1,10 @@
-import numpy as np
-import cv2
 import logging
+
+import cv2
+import numpy as np
 import tensorflow as tf
-from utils.config import DISEASE_CLASSES, IMG_SIZE
+
+from utils.config import IMG_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -190,8 +192,11 @@ class ExplainableAI:
         for layer in reversed(model.layers):
             if isinstance(layer, tf.keras.layers.Conv2D):
                 return layer
-            if hasattr(layer, 'output') and hasattr(layer.output, 'shape'):
-                if len(layer.output.shape) == 4:
+            if (
+                hasattr(layer, 'output')
+                and hasattr(layer.output, 'shape')
+                and len(layer.output.shape) == 4
+            ):
                     return layer
         return None
 

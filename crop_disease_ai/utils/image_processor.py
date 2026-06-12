@@ -1,8 +1,10 @@
+import base64
+import io
+
 import cv2
 import numpy as np
 from PIL import Image
-import io
-import base64
+
 from utils.config import IMG_SIZE
 
 
@@ -98,10 +100,7 @@ class ImageProcessor:
 
     @staticmethod
     def detect_edges(image_np):
-        if len(image_np.shape) == 3:
-            gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-        else:
-            gray = image_np
+        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY) if len(image_np.shape) == 3 else image_np
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blurred, 50, 150)
         return edges
@@ -139,7 +138,7 @@ class ImageProcessor:
             return False, f"Invalid file type: {uploaded_file.type}. Allowed: jpg, png, webp, tiff"
         max_size = 10 * 1024 * 1024
         if len(uploaded_file.getvalue()) > max_size:
-            return False, f"File too large. Maximum size: 10MB"
+            return False, "File too large. Maximum size: 10MB"
         try:
             img = Image.open(io.BytesIO(uploaded_file.getvalue()))
             img.verify()

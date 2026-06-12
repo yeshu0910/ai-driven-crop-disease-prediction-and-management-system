@@ -1,9 +1,10 @@
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 import sys
 from pathlib import Path
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -74,7 +75,7 @@ def render_disease_frequency(db):
             showlegend=False,
             xaxis_title=t("analytics.chart_cases"),
             yaxis_title="",
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
         )
@@ -93,8 +94,8 @@ def render_monthly_trends(db):
         fig.add_trace(go.Scatter(
             x=df["month"], y=df["total"],
             mode="lines+markers", name=t("analytics.chart_total_scans"),
-            line=dict(color="#2e7d32", width=3),
-            marker=dict(size=8),
+            line={"color": "#2e7d32", "width": 3},
+            marker={"size": 8},
         ))
         fig.add_trace(go.Bar(
             x=df["month"], y=df["healthy"],
@@ -111,8 +112,8 @@ def render_monthly_trends(db):
             template="plotly_white",
             hovermode="x",
             height=400,
-            margin=dict(l=10, r=10, t=10, b=10),
-            legend=dict(orientation="h", y=1.1),
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            legend={"orientation": "h", "y": 1.1},
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
         )
@@ -138,9 +139,9 @@ def render_crop_health_pie(db):
         )])
         fig.update_layout(
             height=350,
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
             showlegend=True,
-            legend=dict(orientation="h", y=1.1),
+            legend={"orientation": "h", "y": 1.1},
             paper_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig, width='stretch')
@@ -185,7 +186,7 @@ def render_analytics_overview(db):
             x=df["date"], y=df["total_scans"],
             mode="lines+markers",
             name=t("analytics.chart_total_scans"),
-            line=dict(color="#2e7d32", width=2),
+            line={"color": "#2e7d32", "width": 2},
             fill="tozeroy",
             fillcolor="rgba(46,125,50,0.1)",
         ))
@@ -193,20 +194,20 @@ def render_analytics_overview(db):
             x=df["date"], y=df["healthy_scans"],
             mode="lines+markers",
             name=t("analytics.chart_healthy"),
-            line=dict(color="#4caf50", width=2)
+            line={"color": "#4caf50", "width": 2}
         ))
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["diseased_scans"],
             mode="lines+markers",
             name=t("analytics.chart_diseased"),
-            line=dict(color="#ff6f00", width=2)
+            line={"color": "#ff6f00", "width": 2}
         ))
         fig.update_layout(
             template="plotly_white",
             hovermode="x",
             height=350,
-            margin=dict(l=10, r=10, t=10, b=10),
-            legend=dict(orientation="h", y=1.1),
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            legend={"orientation": "h", "y": 1.1},
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
         )

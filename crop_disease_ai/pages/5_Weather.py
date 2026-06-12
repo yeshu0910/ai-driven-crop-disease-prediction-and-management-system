@@ -1,9 +1,9 @@
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import sys
 from pathlib import Path
+
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -94,15 +94,15 @@ def render_forecast(forecast_data):
         x=df["date"], y=df["temp_max"],
         mode="lines+markers",
         name=t("analytics.chart_temp_max"),
-        line=dict(color="#e53935", width=2),
-        marker=dict(size=6),
+        line={"color": "#e53935", "width": 2},
+        marker={"size": 6},
     ))
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["temp_min"],
         mode="lines+markers",
         name=t("analytics.chart_temp_min"),
-        line=dict(color="#1e88e5", width=2),
-        marker=dict(size=6),
+        line={"color": "#1e88e5", "width": 2},
+        marker={"size": 6},
         fill="tonexty",
         fillcolor="rgba(30,136,229,0.1)",
     ))
@@ -111,10 +111,10 @@ def render_forecast(forecast_data):
         template="plotly_white",
         hovermode="x",
         height=280,
-        margin=dict(l=10, r=10, t=40, b=10),
-        legend=dict(orientation="h", y=1.1),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(title=t("weather.metric_temp"))
+        margin={"l": 10, "r": 10, "t": 40, "b": 10},
+        legend={"orientation": "h", "y": 1.1},
+        xaxis={"showgrid": False},
+        yaxis={"title": t("weather.metric_temp")}
     )
     st.plotly_chart(fig, width='stretch')
 
@@ -131,19 +131,19 @@ def render_forecast(forecast_data):
         x=df["date"], y=df["wind_speed_avg"],
         mode="lines+markers",
         name=t("weather.metric_wind"),
-        line=dict(color="#43a047", width=2),
-        marker=dict(size=6), yaxis="y2",
+        line={"color": "#43a047", "width": 2},
+        marker={"size": 6}, yaxis="y2",
     ))
     fig2.update_layout(
         title=t("weather.forecast_humidity_wind"),
         template="plotly_white",
         hovermode="x",
         height=280,
-        margin=dict(l=10, r=10, t=40, b=10),
-        legend=dict(orientation="h", y=1.1),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(title=t("weather.metric_humidity")),
-        yaxis2=dict(title=t("weather.metric_wind"), overlaying="y", side="right")
+        margin={"l": 10, "r": 10, "t": 40, "b": 10},
+        legend={"orientation": "h", "y": 1.1},
+        xaxis={"showgrid": False},
+        yaxis={"title": t("weather.metric_humidity")},
+        yaxis2={"title": t("weather.metric_wind"), "overlaying": "y", "side": "right"}
     )
     st.plotly_chart(fig2, width='stretch')
 
@@ -198,9 +198,9 @@ def render_disease_risk(risk_prediction, crop_name):
                 title=t("weather.risk_daily", crop=crop_name),
                 template="plotly_white",
                 height=250,
-                margin=dict(l=10, r=10, t=40, b=10),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(title=t("weather.risk_score"), range=[0, 110])
+                margin={"l": 10, "r": 10, "t": 40, "b": 10},
+                xaxis={"showgrid": False},
+                yaxis={"title": t("weather.risk_score"), "range": [0, 110]}
             )
             st.plotly_chart(fig, width='stretch')
 
@@ -256,23 +256,23 @@ def main():
             weather_data = weather_api.get_current_weather(location)
             forecast_data = weather_api.get_forecast(location, days=7)
 
-                    if weather_data:
-                        db.log_weather(
-                            location=weather_data.get("location", location),
-                            temperature=weather_data.get("temperature"),
-                            humidity=weather_data.get("humidity"),
-                            pressure=weather_data.get("pressure"),
-                            wind_speed=weather_data.get("wind_speed"),
-                            weather_description=weather_data.get("weather_description"),
-                        )
+            if weather_data:
+                db.log_weather(
+                    location=weather_data.get("location", location),
+                    temperature=weather_data.get("temperature"),
+                    humidity=weather_data.get("humidity"),
+                    pressure=weather_data.get("pressure"),
+                    wind_speed=weather_data.get("wind_speed"),
+                    weather_description=weather_data.get("weather_description"),
+                )
 
-                    st.session_state["weather_data"] = weather_data
-                    st.session_state["forecast_data"] = forecast_data
+            st.session_state["weather_data"] = weather_data
+            st.session_state["forecast_data"] = forecast_data
 
-                    risk = risk_predictor.predict_7_day_risk(crop_name, forecast_data)
-                    st.session_state["risk_prediction"] = risk
+            risk = risk_predictor.predict_7_day_risk(crop_name, forecast_data)
+            st.session_state["risk_prediction"] = risk
 
-            st.success(t("weather.updated_success"))
+        st.success(t("weather.updated_success"))
 
     weather_data = st.session_state.get("weather_data")
     forecast_data = st.session_state.get("forecast_data")
