@@ -4,10 +4,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from utils.translator import init_i18n, t
+from utils.translator import t, load_translations, get_supported_languages
 
 st.set_page_config(
-    page_title="Crop Disease AI - Smart Agriculture",
+    page_title=t("app.title"),
     page_icon="🌱",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -36,18 +36,20 @@ def init_session_state():
         from database.db_manager import DatabaseManager
         DatabaseManager()
         st.session_state["db_initialized"] = True
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
 
 
 def render_sidebar():
     with st.sidebar:
         st.markdown(f"""
             <div class="sidebar-header">
-                <h3>{t('app.sidebar_title')}</h3>
-                <p style="font-size: 0.8rem; opacity: 0.8;">{t('app.sidebar_subtitle')}</p>
+                <h3>{t("sidebar.header_title")}</h3>
+                <p style="font-size: 0.8rem; opacity: 0.8;">{t("sidebar.header_subtitle")}</p>
             </div>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"### {t('app.navigation')}")
+        st.markdown(f"### {t('nav.navigation')}")
         pages = {
             t("nav.home"): "1_Home.py",
             t("nav.detection"): "2_Detection.py",
@@ -76,35 +78,34 @@ def render_sidebar():
         )
 
         st.markdown("---")
-        st.markdown(f"### ⚙️ {t('sidebar.settings')}")
-
+        st.markdown(f"### {t('sidebar.settings')}")
+        theme_options = [t("sidebar.light"), t("sidebar.dark")]
         theme = st.selectbox(
-            "🎨 " + t("sidebar.theme"),
-            ["light", "dark"],
-            index=0 if st.session_state.get("theme") == "light" else 1,
-            format_func=lambda x: {"light": t("sidebar.theme_light"), "dark": t("sidebar.theme_dark")}[x],
-            key="theme_selector"
+            t("sidebar.theme"),
+            theme_options,
+            index=0 if st.session_state.get("theme") == "light" else 1
         )
-        st.session_state["theme"] = theme
+        st.session_state["theme"] = "light" if theme == t("sidebar.light") else "dark"
 
-        st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
-
-        lang = st.selectbox(
-            "🌐 " + t("sidebar.language"),
-            ["en", "hi", "te"],
-            index=["en", "hi", "te"].index(st.session_state.get("language", "en")),
-            format_func=lambda x: {"en": t("sidebar.language_en"), "hi": t("sidebar.language_hi"), "te": t("sidebar.language_te")}[x],
-            key="lang_selector"
+        langs = get_supported_languages()
+        lang_labels = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
+        lang_options = [f"{lang_labels.get(l, l.upper())}" for l in langs]
+        current_lang = st.session_state.get("language", "en")
+        lang_idx = langs.index(current_lang) if current_lang in langs else 0
+        selected_lang = st.selectbox(
+            t("app.language"), lang_options, index=lang_idx
         )
-        if lang != st.session_state.get("language"):
-            init_i18n(lang)
+        new_lang = langs[lang_options.index(selected_lang)]
+        if new_lang != current_lang:
+            st.session_state["language"] = new_lang
+            load_translations(new_lang)
             st.rerun()
 
         st.markdown("---")
         st.markdown(f"""
             <div style="text-align: center; padding: 1rem 0; font-size: 0.8rem; color: #888;">
-                <p>{t('app.footer_text')}</p>
-                <p>{t('app.version')}</p>
+                <p>{t("app.footer_title")}</p>
+                <p>{t("app.version")}</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -112,8 +113,8 @@ def render_sidebar():
 def render_main():
     st.markdown(f"""
         <div class="main-header">
-            <h1>{t('app.main_title')}</h1>
-            <p>{t('app.main_subtitle')}</p>
+            <h1>{t("app.main_title")}</h1>
+            <p>{t("app.subtitle")}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -122,9 +123,9 @@ def render_main():
     with col1:
         st.markdown(f"""
             <div class="dashboard-card" style="padding: 2rem;">
-                <h2 style="color: #2e7d32; margin-bottom: 1rem;">{t('home.welcome_title')}</h2>
+                <h2 style="color: #2e7d32; margin-bottom: 1rem;">{t("welcome.title")}</h2>
                 <p style="line-height: 1.7; font-size: 1.05rem;">
-                    {t('home.welcome_desc')}
+                    {t("welcome.description")}
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -134,12 +135,12 @@ def render_main():
         """, unsafe_allow_html=True)
 
         quick_actions = [
-            (t("home.quick_action_detect"), t("home.quick_action_detect_label"), t("home.quick_action_detect_desc"), "pages/2_Detection.py"),
-            (t("home.quick_action_analytics"), t("home.quick_action_analytics_label"), t("home.quick_action_analytics_desc"), "pages/3_Analytics.py"),
-            (t("home.quick_action_weather"), t("home.quick_action_weather_label"), t("home.quick_action_weather_desc"), "pages/5_Weather.py"),
-            (t("home.quick_action_kb"), t("home.quick_action_kb_label"), t("home.quick_action_kb_desc"), "pages/4_Knowledge_Base.py"),
-            (t("home.quick_action_history"), t("home.quick_action_history_label"), t("home.quick_action_history_desc"), "pages/6_History.py"),
-            (t("home.quick_action_about"), t("home.quick_action_about_label"), t("home.quick_action_about_desc"), "pages/7_About.py")
+            ("🔬", t("quick_action.detect"), t("quick_action.detect_desc"), "pages/2_Detection.py"),
+            ("📊", t("quick_action.analytics"), t("quick_action.analytics_desc"), "pages/3_Analytics.py"),
+            ("🌤️", t("quick_action.weather"), t("quick_action.weather_desc"), "pages/5_Weather.py"),
+            ("📖", t("quick_action.knowledge"), t("quick_action.knowledge_desc"), "pages/4_Knowledge_Base.py"),
+            ("📋", t("quick_action.history"), t("quick_action.history_desc"), "pages/6_History.py"),
+            ("ℹ️", t("quick_action.about"), t("quick_action.about_desc"), "pages/7_About.py")
         ]
 
         for icon, label, desc, page in quick_actions:
@@ -159,14 +160,14 @@ def render_main():
         stats = get_dashboard_stats()
         st.markdown(f"""
             <div class="dashboard-card" style="padding: 1.5rem;">
-                <h3 style="margin-bottom: 1rem;">{t('home.quick_stats')}</h3>
+                <h3 style="margin-bottom: 1rem;">{t("stats.quick_stats")}</h3>
         """, unsafe_allow_html=True)
 
         stat_items = [
-            ("🔬", t("home.stat_total_scans"), stats["total_scans"], "#2e7d32"),
-            ("✅", t("home.stat_healthy_crops"), stats["healthy_scans"], "#4caf50"),
-            ("⚠️", t("home.stat_diseases_found"), stats["diseased_scans"], "#ff6f00"),
-            ("🌾", t("home.stat_crops_monitored"), stats["total_crops"], "#1976d2")
+            ("🔬", t("stats.total_scans"), stats["total_scans"], "#2e7d32"),
+            ("✅", t("stats.healthy"), stats["healthy_scans"], "#4caf50"),
+            ("⚠️", t("stats.diseased"), stats["diseased_scans"], "#ff6f00"),
+            ("🌾", t("stats.crops"), stats["total_crops"], "#1976d2")
         ]
         for icon, label, value, color in stat_items:
             st.markdown(f"""
@@ -181,9 +182,9 @@ def render_main():
 
         st.markdown(f"""
             <div class="dashboard-card" style="padding: 1.5rem; margin-top: 1rem;">
-                <h3 style="margin-bottom: 0.5rem;">{t('home.quick_tip_title')}</h3>
+                <h3 style="margin-bottom: 0.5rem;">{t("tip.title")}</h3>
                 <p style="color: #555; font-size: 0.9rem;">
-                    {t('home.quick_tip_desc')}
+                    {t("tip.description")}
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -193,8 +194,8 @@ def render_main():
         <div style="text-align: center; padding: 1.5rem; margin-top: 1rem;
              background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
              border-radius: 16px;">
-            <h3 style="color: #2e7d32; font-weight: 700;">{t('home.cta_ready')}</h3>
-            <p style="color: #555;">{t('home.cta_ready_desc')}</p>
+            <h3 style="color: #2e7d32; font-weight: 700;">{t("welcome.cta_title")}</h3>
+            <p style="color: #555;">{t("welcome.cta_subtitle")}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -215,8 +216,8 @@ def get_dashboard_stats():
 
 def main():
     init_session_state()
-    init_i18n(st.session_state["language"])
-    load_css()
+    lang = st.session_state.get("language", "en")
+    load_translations(lang)
     render_sidebar()
     render_main()
 

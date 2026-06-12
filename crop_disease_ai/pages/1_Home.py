@@ -11,7 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.translator import init_i18n, t
 
-st.set_page_config(page_title="Home - Crop Disease AI", page_icon="🌱", layout="wide")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils.translator import t
+
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.home"), page_icon="🌱", layout="wide")
 
 def load_css():
     css_path = os.path.join(os.path.dirname(__file__), "assets/style.css")
@@ -24,6 +27,8 @@ def load_css():
 def render_header():
     st.markdown(f"""
         <div class="main-header">
+            <h1>{t("home.title")}</h1>
+            <p>{t("home.subtitle")}</p>
             <h1>{t('home.header_title')}</h1>
             <p>{t('home.header_subtitle')}</p>
         </div>
@@ -33,6 +38,7 @@ def render_header():
 def render_stat_cards(stats):
     cols = st.columns(4)
     icons = ["🔬", "✅", "⚠️", "📊"]
+    labels = [t("stats.total_scans"), t("stats.healthy_crops"), t("stats.diseases_found"), t("stats.crops_monitored")]
     labels = [
         t("home.stat_total_scans"),
         t("home.stat_healthy_crops"),
@@ -77,16 +83,17 @@ def render_features():
 
 
 def render_supported_crops():
-    crops = [
-        ("Tomato", "🍅"), ("Potato", "🥔"), ("Rice", "🌾"), ("Wheat", "🌾"),
-        ("Corn", "🌽"), ("Cotton", "🌿"), ("Soybean", "🫘"), ("Sugarcane", "🎋"),
-        ("Groundnut", "🥜"), ("Sunflower", "🌻"), ("Banana", "🍌"), ("Mango", "🥭"),
-        ("Grapes", "🍇"), ("Apple", "🍎"), ("Chili", "🌶️")
+    crops_list = [
+        (t("home.crop_tomato"), "🍅"), (t("home.crop_potato"), "🥔"), (t("home.crop_rice"), "🌾"),
+        (t("home.crop_wheat"), "🌾"), (t("home.crop_corn"), "🌽"), (t("home.crop_cotton"), "🌿"),
+        (t("home.crop_soybean"), "🫘"), (t("home.crop_sugarcane"), "🎋"), (t("home.crop_groundnut"), "🥜"),
+        (t("home.crop_sunflower"), "🌻"), (t("home.crop_banana"), "🍌"), (t("home.crop_mango"), "🥭"),
+        (t("home.crop_grapes"), "🍇"), (t("home.crop_apple"), "🍎"), (t("home.crop_chili"), "🌶️")
     ]
 
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.supported_crops')}</h2>", unsafe_allow_html=True)
     cols = st.columns(5)
-    for i, (crop, emoji) in enumerate(crops):
+    for i, (crop, emoji) in enumerate(crops_list):
         with cols[i % 5]:
             st.markdown(f"""
                 <div style="text-align: center; padding: 0.8rem; margin-bottom: 0.5rem;
@@ -132,7 +139,7 @@ def render_workflow():
 
 
 def render_quick_stats_chart():
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+    months = [t("month.jan"), t("month.feb"), t("month.mar"), t("month.apr"), t("month.may"), t("month.jun")]
     healthy = [random.randint(10, 30) for _ in range(6)]
     diseased = [random.randint(5, 20) for _ in range(6)]
 
@@ -143,6 +150,7 @@ def render_quick_stats_chart():
                           marker_color="#ff6f00", text=diseased, textposition="auto"))
     fig.update_layout(
         barmode="group",
+        title=t("home.monthly_trends"),
         title=t("home.chart_monthly_trends"),
         template="plotly_white",
         hovermode="x",
@@ -191,6 +199,7 @@ def main():
     render_supported_crops()
     render_workflow()
 
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.monthly_trends')}</h2>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.detection_trends')}</h2>", unsafe_allow_html=True)
     render_quick_stats_chart()
 
@@ -198,6 +207,8 @@ def main():
         <div style="text-align: center; padding: 2rem; margin-top: 2rem;
              background: linear-gradient(135deg, #1b5e20, #2e7d32);
              border-radius: 16px; color: white;">
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem;">{t("home.footer_text")}</h3>
+            <p style="opacity: 0.9;">{t("home.footer_subtext")}</p>
             <h3 style="font-weight: 700; margin-bottom: 0.5rem;">{t('home.cta_title')}</h3>
             <p style="opacity: 0.9;">{t('home.cta_desc')}</p>
         </div>
