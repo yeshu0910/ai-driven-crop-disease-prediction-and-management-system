@@ -4,7 +4,12 @@ import plotly.express as px
 import pandas as pd
 from datetime import datetime, timedelta
 import random
-import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from utils.translator import init_i18n, t
 
 st.set_page_config(page_title="Home - Crop Disease AI", page_icon="🌱", layout="wide")
 
@@ -17,10 +22,10 @@ def load_css():
 
 
 def render_header():
-    st.markdown("""
+    st.markdown(f"""
         <div class="main-header">
-            <h1>🌱 AI Crop Disease Prediction System</h1>
-            <p>Intelligent disease detection · Smart treatment recommendations · Weather-based risk analysis</p>
+            <h1>{t('home.header_title')}</h1>
+            <p>{t('home.header_subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -28,7 +33,12 @@ def render_header():
 def render_stat_cards(stats):
     cols = st.columns(4)
     icons = ["🔬", "✅", "⚠️", "📊"]
-    labels = ["Total Scans", "Healthy Crops", "Diseases Found", "Crops Monitored"]
+    labels = [
+        t("home.stat_total_scans"),
+        t("home.stat_healthy_crops"),
+        t("home.stat_diseases_found"),
+        t("home.stat_crops_monitored")
+    ]
     colors = ["#2e7d32", "#4caf50", "#ff6f00", "#1976d2"]
 
     for i, (col, icon, label, color) in enumerate(zip(cols, icons, labels, colors)):
@@ -43,15 +53,15 @@ def render_stat_cards(stats):
 
 
 def render_features():
-    st.markdown("<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>Core Capabilities</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.core_capabilities')}</h2>", unsafe_allow_html=True)
 
     features = [
-        {"icon": "🧠", "title": "AI Disease Detection", "desc": "Upload leaf images for instant disease diagnosis using deep learning with >95% accuracy across 15+ crops."},
-        {"icon": "🌡️", "title": "Weather Intelligence", "desc": "Real-time weather monitoring and 7-day disease risk forecasting powered by OpenWeather API."},
-        {"icon": "💊", "title": "Smart Treatments", "desc": "Personalized chemical and organic treatment recommendations based on disease, severity, and weather."},
-        {"icon": "📊", "title": "Analytics Dashboard", "desc": "Interactive dashboards with disease trends, crop health reports, and exportable analytics."},
-        {"icon": "📄", "title": "PDF Reports", "desc": "Generate comprehensive diagnostic reports with images, analysis, and treatment plans."},
-        {"icon": "🔍", "title": "Explainable AI", "desc": "Understand why each diagnosis was made with confidence analysis and visual heatmaps."},
+        {"icon": "🧠", "title": t("home.feature_ai_title"), "desc": t("home.feature_ai_desc")},
+        {"icon": "🌡️", "title": t("home.feature_weather_title"), "desc": t("home.feature_weather_desc")},
+        {"icon": "💊", "title": t("home.feature_treatment_title"), "desc": t("home.feature_treatment_desc")},
+        {"icon": "📊", "title": t("home.feature_analytics_title"), "desc": t("home.feature_analytics_desc")},
+        {"icon": "📄", "title": t("home.feature_pdf_title"), "desc": t("home.feature_pdf_desc")},
+        {"icon": "🔍", "title": t("home.feature_xai_title"), "desc": t("home.feature_xai_desc")},
     ]
 
     cols = st.columns(3)
@@ -74,7 +84,7 @@ def render_supported_crops():
         ("Grapes", "🍇"), ("Apple", "🍎"), ("Chili", "🌶️")
     ]
 
-    st.markdown("<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>Supported Crops</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.supported_crops')}</h2>", unsafe_allow_html=True)
     cols = st.columns(5)
     for i, (crop, emoji) in enumerate(crops):
         with cols[i % 5]:
@@ -89,15 +99,15 @@ def render_supported_crops():
 
 
 def render_workflow():
-    st.markdown("<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>How It Works</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.how_it_works')}</h2>", unsafe_allow_html=True)
 
     steps = [
-        ("1", "Upload Image", "Take a photo or upload a leaf image of your crop"),
-        ("2", "AI Analysis", "Our CNN model analyzes the image for disease patterns"),
-        ("3", "Get Diagnosis", "Receive instant disease identification with confidence score"),
-        ("4", "Treatment Plan", "Get personalized chemical and organic recommendations"),
-        ("5", "Weather Check", "Monitor conditions and assess disease risk for 7 days"),
-        ("6", "Generate Report", "Download comprehensive PDF report for your records")
+        ("1", t("home.step1_title"), t("home.step1_desc")),
+        ("2", t("home.step2_title"), t("home.step2_desc")),
+        ("3", t("home.step3_title"), t("home.step3_desc")),
+        ("4", t("home.step4_title"), t("home.step4_desc")),
+        ("5", t("home.step5_title"), t("home.step5_desc")),
+        ("6", t("home.step6_title"), t("home.step6_desc"))
     ]
 
     cols = st.columns(6)
@@ -127,13 +137,13 @@ def render_quick_stats_chart():
     diseased = [random.randint(5, 20) for _ in range(6)]
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(name="Healthy", x=months, y=healthy,
+    fig.add_trace(go.Bar(name=t("home.chart_healthy"), x=months, y=healthy,
                           marker_color="#4caf50", text=healthy, textposition="auto"))
-    fig.add_trace(go.Bar(name="Diseased", x=months, y=diseased,
+    fig.add_trace(go.Bar(name=t("home.chart_diseased"), x=months, y=diseased,
                           marker_color="#ff6f00", text=diseased, textposition="auto"))
     fig.update_layout(
         barmode="group",
-        title="Monthly Detection Trends (Last 6 Months)",
+        title=t("home.chart_monthly_trends"),
         template="plotly_white",
         hovermode="x",
         height=350,
@@ -144,6 +154,9 @@ def render_quick_stats_chart():
 
 
 def main():
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
+    init_i18n(st.session_state["language"])
     load_css()
     render_header()
 
@@ -161,32 +174,32 @@ def main():
     with col1:
         render_features()
     with col2:
-        st.markdown("<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>Quick Actions</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.quick_actions')}</h2>", unsafe_allow_html=True)
         st.markdown("""
             <div class="dashboard-card" style="padding: 1.5rem;">
         """, unsafe_allow_html=True)
-        if st.button("🔬 New Disease Detection", width='stretch', type="primary"):
+        if st.button(t("home.btn_new_detection"), width='stretch', type="primary"):
             st.switch_page("pages/2_Detection.py")
-        if st.button("📊 View Analytics Dashboard", width='stretch'):
+        if st.button(t("home.btn_view_analytics"), width='stretch'):
             st.switch_page("pages/3_Analytics.py")
-        if st.button("📖 Browse Knowledge Base", width='stretch'):
+        if st.button(t("home.btn_browse_kb"), width='stretch'):
             st.switch_page("pages/4_Knowledge_Base.py")
-        if st.button("🌤️ Check Weather & Risk", width='stretch'):
+        if st.button(t("home.btn_check_weather"), width='stretch'):
             st.switch_page("pages/5_Weather.py")
         st.markdown("</div>", unsafe_allow_html=True)
 
     render_supported_crops()
     render_workflow()
 
-    st.markdown("<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>Detection Trends</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.detection_trends')}</h2>", unsafe_allow_html=True)
     render_quick_stats_chart()
 
-    st.markdown("""
+    st.markdown(f"""
         <div style="text-align: center; padding: 2rem; margin-top: 2rem;
              background: linear-gradient(135deg, #1b5e20, #2e7d32);
              border-radius: 16px; color: white;">
-            <h3 style="font-weight: 700; margin-bottom: 0.5rem;">🌱 Empowering Farmers with AI</h3>
-            <p style="opacity: 0.9;">Protect your crops, maximize yields, and make data-driven farming decisions.</p>
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem;">{t('home.cta_title')}</h3>
+            <p style="opacity: 0.9;">{t('home.cta_desc')}</p>
         </div>
     """, unsafe_allow_html=True)
 
