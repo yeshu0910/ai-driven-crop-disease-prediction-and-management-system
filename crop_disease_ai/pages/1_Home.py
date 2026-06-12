@@ -11,6 +11,7 @@ from utils.translator import init_i18n, t
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.home"), page_icon="🌱", layout="wide")
 
 def load_css():
     css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
@@ -19,9 +20,13 @@ def load_css():
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
+
+
 def render_header():
     st.markdown(f"""
         <div class="main-header">
+            <h1>{t("home.title")}</h1>
+            <p>{t("home.subtitle")}</p>
             <h1>{t('home.header_title')}</h1>
             <p>{t('home.header_subtitle')}</p>
         </div>
@@ -31,6 +36,7 @@ def render_header():
 def render_stat_cards(stats):
     cols = st.columns(4)
     icons = ["🔬", "✅", "⚠️", "📊"]
+    labels = [t("stats.total_scans"), t("stats.healthy_crops"), t("stats.diseases_found"), t("stats.crops_monitored")]
     labels = [
         t("home.stat_total_scans"),
         t("home.stat_healthy_crops"),
@@ -83,7 +89,7 @@ def render_supported_crops():
 
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.supported_crops')}</h2>", unsafe_allow_html=True)
     cols = st.columns(5)
-    for i, (crop, emoji) in enumerate(crops):
+    for i, (crop, emoji) in enumerate(crops_list):
         with cols[i % 5]:
             st.markdown(f"""
                 <div style="text-align: center; padding: 0.8rem; margin-bottom: 0.5rem;
@@ -129,6 +135,7 @@ def render_quick_stats_chart():
                           marker_color="#ff6f00", text=diseased_vals, textposition="auto"))
     fig.update_layout(
         barmode="group",
+        title=t("home.monthly_trends"),
         title=t("home.chart_monthly_trends"),
         template="plotly_white",
         hovermode="x",
@@ -183,6 +190,7 @@ def main():
     render_supported_crops()
     render_workflow()
 
+    st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.monthly_trends')}</h2>", unsafe_allow_html=True)
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.detection_trends')}</h2>", unsafe_allow_html=True)
     render_quick_stats_chart()
 
@@ -190,6 +198,8 @@ def main():
         <div style="text-align: center; padding: 2rem; margin-top: 2rem;
              background: linear-gradient(135deg, #1b5e20, #2e7d32);
              border-radius: 16px; color: white;">
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem;">{t("home.footer_text")}</h3>
+            <p style="opacity: 0.9;">{t("home.footer_subtext")}</p>
             <h3 style="font-weight: 700; margin-bottom: 0.5rem;">{t('home.cta_title')}</h3>
             <p style="opacity: 0.9;">{t('home.cta_desc')}</p>
         </div>
