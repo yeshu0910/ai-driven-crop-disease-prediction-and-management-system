@@ -10,6 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.weather"), page_icon="🌤️", layout="wide")
+from utils.translator import init_i18n, t
+
+st.set_page_config(page_title="Weather Intelligence - Crop Disease AI", page_icon="🌤️", layout="wide")
 
 
 def load_css():
@@ -41,6 +44,8 @@ def render_header():
         <div class="main-header">
             <h1>{t("weather.title")}</h1>
             <p>{t("weather.subtitle")}</p>
+            <h1>{t('weather.title')}</h1>
+            <p>{t('weather.subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -48,6 +53,7 @@ def render_header():
 def render_current_weather(weather_data):
     if not weather_data:
         st.warning(t("weather.unable_fetch"))
+        st.warning(t("weather.fetch_error"))
         return
 
     source_badge = t("weather.source_live") if weather_data.get("source") == "api" else t("weather.source_simulated")
@@ -65,6 +71,11 @@ def render_current_weather(weather_data):
         ("💨", t("weather.wind_speed"), f"{weather_data.get('wind_speed', 'N/A')} m/s", "#43a047"),
         ("☁️", t("weather.condition"), weather_data.get('weather_description', 'N/A').title(), "#fb8c00"),
         ("🌊", t("weather.pressure"), f"{weather_data.get('pressure', 'N/A')} hPa", "#8e24aa")
+        ("🌡️", t("weather.metric_temp"), f"{weather_data.get('temperature', 'N/A')}°C", "#e53935"),
+        ("💧", t("weather.metric_humidity"), f"{weather_data.get('humidity', 'N/A')}%", "#1e88e5"),
+        ("💨", t("weather.metric_wind"), f"{weather_data.get('wind_speed', 'N/A')} m/s", "#43a047"),
+        ("☁️", t("weather.metric_condition"), weather_data.get('weather_description', 'N/A').title(), "#fb8c00"),
+        ("🌊", t("weather.metric_pressure"), f"{weather_data.get('pressure', 'N/A')} hPa", "#8e24aa")
     ]
     for i, (icon, label, value, color) in enumerate(metrics):
         with cols[i]:
@@ -82,6 +93,7 @@ def render_forecast(forecast_data):
 
     if not forecast_data or "forecasts" not in forecast_data:
         st.info(t("weather.no_forecast"))
+        st.info(t("weather.forecast_unavailable"))
         return
 
     forecasts = forecast_data["forecasts"]
@@ -93,14 +105,14 @@ def render_forecast(forecast_data):
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["temp_max"],
         mode="lines+markers",
-        name="Max Temp",
+        name=t("analytics.chart_temp_max"),
         line=dict(color="#e53935", width=2),
         marker=dict(size=6)
     ))
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["temp_min"],
         mode="lines+markers",
-        name="Min Temp",
+        name=t("analytics.chart_temp_min"),
         line=dict(color="#1e88e5", width=2),
         marker=dict(size=6),
         fill="tonexty",
@@ -108,6 +120,7 @@ def render_forecast(forecast_data):
     ))
     fig.update_layout(
         title=t("weather.chart_temp_title"),
+        title=t("weather.forecast_temp"),
         template="plotly_white",
         hovermode="x",
         height=300,
@@ -115,6 +128,7 @@ def render_forecast(forecast_data):
         legend=dict(orientation="h", y=1.1),
         xaxis=dict(showgrid=False),
         yaxis=dict(title=f"{t('weather.temperature')} (°C)")
+        yaxis=dict(title=t("weather.metric_temp"))
     )
     st.plotly_chart(fig, width='stretch')
 
@@ -122,6 +136,7 @@ def render_forecast(forecast_data):
     fig2.add_trace(go.Bar(
         x=df["date"], y=df["humidity_avg"],
         name=t("weather.humidity"),
+        name=t("weather.metric_humidity"),
         marker_color="#1e88e5",
         opacity=0.7,
         text=df["humidity_avg"].round(1),
@@ -131,12 +146,14 @@ def render_forecast(forecast_data):
         x=df["date"], y=df["wind_speed_avg"],
         mode="lines+markers",
         name=t("weather.wind_speed"),
+        name=t("weather.metric_wind"),
         line=dict(color="#43a047", width=2),
         marker=dict(size=6),
         yaxis="y2"
     ))
     fig2.update_layout(
         title=t("weather.chart_humidity_title"),
+        title=t("weather.forecast_humidity_wind"),
         template="plotly_white",
         hovermode="x",
         height=300,
@@ -145,6 +162,8 @@ def render_forecast(forecast_data):
         xaxis=dict(showgrid=False),
         yaxis=dict(title=f"{t('weather.humidity')} (%)"),
         yaxis2=dict(title=f"{t('weather.wind_speed')} (m/s)", overlaying="y", side="right")
+        yaxis=dict(title=t("weather.metric_humidity")),
+        yaxis2=dict(title=t("weather.metric_wind"), overlaying="y", side="right")
     )
     st.plotly_chart(fig2, width='stretch')
 
@@ -154,6 +173,7 @@ def render_disease_risk(risk_prediction, crop_name):
 
     if not risk_prediction or "predictions" not in risk_prediction:
         st.info(t("weather.no_risk"))
+        st.info(t("weather.risk_select_prompt"))
         return
 
     overall = risk_prediction.get("overall_risk", {})
@@ -171,6 +191,7 @@ def render_disease_risk(risk_prediction, crop_name):
                     {risk_label}
                 </div>
                 <div class="card-label">{t('weather.overall_risk')}</div>
+                <div class="card-label">{t('weather.risk_overall')}</div>
                 <div style="font-size: 1.5rem; font-weight: 700; color: {risk_color};">
                     {risk_score:.1f}%
                 </div>
@@ -178,6 +199,8 @@ def render_disease_risk(risk_prediction, crop_name):
                     <span style="font-size: 0.85rem;">
                         ⚠️ {t('weather.high_risk_days').format(count=risk_prediction.get('high_risk_days', 0))}<br>
                         🟡 {t('weather.medium_risk_days').format(count=risk_prediction.get('medium_risk_days', 0))}
+                        ⚠️ {t('weather.risk_high_days', count=risk_prediction.get('high_risk_days', 0))}<br>
+                        🟡 {t('weather.risk_medium_days', count=risk_prediction.get('medium_risk_days', 0))}
                     </span>
                 </div>
             </div>
@@ -200,17 +223,20 @@ def render_disease_risk(risk_prediction, crop_name):
             ))
             fig.update_layout(
                 title=t("weather.risk_daily_title").format(crop=crop_name),
+                title=t("weather.risk_daily", crop=crop_name),
                 template="plotly_white",
                 height=250,
                 margin=dict(l=10, r=10, t=40, b=10),
                 xaxis=dict(showgrid=False),
                 yaxis=dict(title=f"Risk Score (%)", range=[0, 110])
+                yaxis=dict(title=t("weather.risk_score"), range=[0, 110])
             )
             st.plotly_chart(fig, width='stretch')
 
     actions = risk_prediction.get("preventive_actions", [])
     if actions:
         with st.expander(t("weather.preventive_actions"), expanded=True):
+        with st.expander(t("weather.risk_preventive"), expanded=True):
             for action in actions:
                 st.markdown(f"- {action}")
 
@@ -233,9 +259,21 @@ def render_weather_history(db):
         st.dataframe(display_df, width='stretch', hide_index=True)
     else:
         st.info(t("weather.no_history"))
+            "logged_at_display": t("weather.table_time"),
+            "temperature": t("weather.table_temp"),
+            "humidity": t("weather.table_humidity"),
+            "wind_speed": t("weather.table_wind"),
+            "weather_description": t("weather.table_conditions")
+        })
+        st.dataframe(display_df, width='stretch', hide_index=True)
+    else:
+        st.info(t("weather.no_logs"))
 
 
 def main():
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
+    init_i18n(st.session_state["language"])
     load_css()
     render_header()
 
@@ -255,6 +293,13 @@ def main():
 
     if st.button(t("weather.btn_update"), type="primary", width='stretch'):
         with st.spinner(t("weather.spinner")):
+        location = st.text_input(t("weather.location_label"), placeholder=t("weather.location_placeholder"), help=t("weather.location_help"))
+    with col2:
+        from utils.config import SUPPORTED_CROPS
+        crop_name = st.selectbox(t("weather.crop_select"), SUPPORTED_CROPS, index=0)
+
+    if st.button(t("weather.btn_update"), type="primary", width='stretch'):
+        with st.spinner(t("weather.fetching")):
             weather_data = weather_api.get_current_weather(location)
             forecast_data = weather_api.get_forecast(location, days=7)
 
@@ -275,6 +320,7 @@ def main():
             st.session_state["risk_prediction"] = risk
 
             st.success(t("weather.success"))
+            st.success(t("weather.updated_success"))
 
     weather_data = st.session_state.get("weather_data")
     forecast_data = st.session_state.get("forecast_data")

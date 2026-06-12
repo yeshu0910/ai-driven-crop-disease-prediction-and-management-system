@@ -6,6 +6,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.knowledge_base"), page_icon="📖", layout="wide")
+from utils.translator import init_i18n, t
+
+st.set_page_config(page_title="Knowledge Base - Crop Disease AI", page_icon="📖", layout="wide")
 
 
 def load_css():
@@ -24,6 +27,8 @@ def render_header():
         <div class="main-header">
             <h1>{t("kb.title")}</h1>
             <p>{t("kb.subtitle")}</p>
+            <h1>{t('kb.title')}</h1>
+            <p>{t('kb.subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -32,12 +37,14 @@ def render_search_and_filter(kb):
     col1, col2 = st.columns([2, 1])
     with col1:
         search_query = st.text_input(t("kb.search"), placeholder=t("kb.search_placeholder"))
+        search_query = st.text_input(t("kb.search_label"), placeholder=t("kb.search_placeholder"))
     with col2:
         all_diseases = kb.get_all_diseases()
         crop_names = sorted(set(
             name.split(" ")[0] for name in all_diseases if " " in name
         ))
         crop_filter = st.selectbox(t("kb.filter_crop"), [t("kb.all_crops")] + crop_names)
+        crop_filter = st.selectbox(t("kb.filter_label"), [t("kb.filter_all")] + crop_names)
     return search_query, crop_filter
 
 
@@ -62,6 +69,7 @@ def render_disease_card(disease_name, info):
     affected = info.get("affected_crops", [])
     affected_html = f"""
         <p><strong>{t('kb.affected_crops').format(crops=', '.join(affected) if affected else t('common.na'))}</strong></p>
+        <p><strong>{t('kb.affected_crops', crops=', '.join(affected) if affected else t('kb.see_crop_name'))}</strong></p>
     """
 
     favorable = info.get("favorable_conditions", "N/A")
@@ -98,11 +106,15 @@ def render_disease_card(disease_name, info):
             {severity_html}
             <div style="margin-top: 1rem;">{affected_html}</div>
             <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions').format(conditions=favorable)}</strong></p>
+            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions', conditions=favorable)}</strong></p>
         </div>
     """, unsafe_allow_html=True)
 
 
 def main():
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
+    init_i18n(st.session_state["language"])
     load_css()
     render_header()
 
@@ -110,6 +122,7 @@ def main():
     search_query, crop_filter = render_search_and_filter(kb)
 
     if crop_filter != t("kb.all_crops"):
+    if crop_filter != t("kb.filter_all"):
         diseases = kb.filter_by_crop(crop_filter)
     elif search_query:
         diseases = kb.search(search_query)
@@ -117,6 +130,7 @@ def main():
         diseases = kb.get_all_diseases()
 
     st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records').format(count=len(diseases))}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records', count=len(diseases))}</p>", unsafe_allow_html=True)
 
     for disease_name in diseases:
         info = kb.get_disease_info(disease_name)

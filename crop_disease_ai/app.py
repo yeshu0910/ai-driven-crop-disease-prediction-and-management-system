@@ -30,6 +30,8 @@ def init_session_state():
         st.session_state["farmer_name"] = ""
     if "farm_location" not in st.session_state:
         st.session_state["farm_location"] = ""
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
     if "db_initialized" not in st.session_state:
         from database.db_manager import DatabaseManager
         DatabaseManager()
@@ -213,7 +215,6 @@ def get_dashboard_stats():
 
 
 def main():
-    load_css()
     init_session_state()
     lang = st.session_state.get("language", "en")
     load_translations(lang)

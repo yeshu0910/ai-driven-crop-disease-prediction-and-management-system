@@ -15,6 +15,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.detection"), page_icon="🔬", layout="wide")
+from utils.translator import init_i18n, t
+
+st.set_page_config(page_title="Disease Detection - Crop Disease AI", page_icon="🔬", layout="wide")
 
 
 def load_css():
@@ -49,6 +52,8 @@ def render_header():
         <div class="main-header">
             <h1>{t("detection.title")}</h1>
             <p>{t("detection.subtitle")}</p>
+            <h1>{t('detection.title')}</h1>
+            <p>{t('detection.subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -136,17 +141,22 @@ def render_prediction_results(result, image_np, models):
                 {t("detection.identified_crop").format(crop=crop_name, conf=confidence*100)} |
                 {t("detection.metric_confidence")}: <strong>{confidence*100:.2f}%</strong> |
                 {t("detection.severity_label").format(severity=severity_label)}
+                {t('detection.result_crop', crop=crop_name)} |
+                {t('detection.result_confidence', confidence=f'{confidence*100:.2f}')} |
+                {t('detection.result_severity', severity=severity_result['severity'])}
             </p>
     """, unsafe_allow_html=True)
 
     if is_low_confidence:
         st.warning(t("detection.low_confidence_warning").format(confidence=confidence*100))
+        st.warning(t("detection.low_confidence_warning", confidence=f"{confidence*100:.1f}"))
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [t("detection.tab_analysis"), t("detection.tab_heatmap"), t("detection.tab_treatment"),
          t("detection.tab_xai"), t("detection.tab_report")]
+        [t("detection.tab_analysis"), t("detection.tab_heatmap"), t("detection.tab_treatment"), t("detection.tab_explanation"), t("detection.tab_report")]
     )
 
     with tab1:
@@ -155,11 +165,13 @@ def render_prediction_results(result, image_np, models):
             severity_val = severity_analyzer.get_severity_meter_value(severity_result["severity"])
             st.markdown(f"""
                 <h4>{t("detection.severity_label").format(severity=severity_label)}</h4>
+                <h4>{t('detection.severity_label', severity=severity_result['severity'])}</h4>
                 <div class="severity-meter">
                     <div class="severity-meter-fill" style="width: {severity_val}%;
                          background: linear-gradient(90deg, {disease_color}88, {disease_color});"></div>
                 </div>
                 <p>{t("detection.infection_label").format(pct=infection_pct)}</p>
+                <p>{t('detection.infection_label', pct=f'{infection_pct:.1f}')}</p>
             """, unsafe_allow_html=True)
 
             st.markdown(f"""
@@ -171,6 +183,13 @@ def render_prediction_results(result, image_np, models):
             """, unsafe_allow_html=True)
 
             st.markdown(f"**{t('detection.spread_estimation').format(estimation=t('severity.spread_' + severity_result['severity'].lower()))}**")
+                    <strong>{t('detection.risk_level', level=severity_result['risk_level'])}</strong><br>
+                    <strong>{t('detection.yield_impact', pct=yield_impact)}</strong><br>
+                    <strong>{t('detection.treatment_urgency', urgency=severity_analyzer.get_treatment_urgency(severity_result['severity']))}</strong>
+                </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown(f"**{t('detection.spread_estimation', estimation=severity_result['spread_estimation'])}**")
 
             crop_confidence = result.get("crop_confidence", 0)
             top5_crops = result.get("top_5_crops", [])
@@ -180,6 +199,8 @@ def render_prediction_results(result, image_np, models):
                 st.markdown(f"""
                     <div style="margin: 0.5rem 0; padding: 0.5rem; background: #e8f5e9; border-radius: 8px;">
                         <strong>{t("detection.identified_crop").format(crop=crop_name, conf=crop_conf_pct)}</strong>
+                        <strong>{t('detection.identified_crop', crop=crop_name)}</strong>
+                        {t('detection.identified_confidence', pct=f'{crop_conf_pct:.0f}')}
                     </div>
                 """, unsafe_allow_html=True)
 
@@ -203,6 +224,7 @@ def render_prediction_results(result, image_np, models):
 
             model_label = model_used.replace("_", " ").title()
             st.markdown(f"**{t('detection.method').format(method=model_label)}**")
+            st.markdown(f"**{t('detection.method', method=model_label)}**")
 
             st.markdown(f"**{t('detection.top_predictions')}**")
             predictions_list = result.get("top_5_predictions", result.get("top_3_predictions", []))
@@ -240,8 +262,8 @@ def render_prediction_results(result, image_np, models):
                     st.caption(t("detection.prediction_quality_caption"))
                     for err in pred_quality.get("validation_errors", []):
                         st.markdown(f"- ⚠️ {err}")
-                    st.markdown(f"- Entropy: {pred_quality.get('norm_entropy', 'N/A')}")
-                    st.markdown(f"- Margin: {pred_quality.get('margin', 'N/A')}")
+                    st.markdown(f"- {t('detection.entropy', value=pred_quality.get('norm_entropy', 'N/A'))}")
+                    st.markdown(f"- {t('detection.margin', value=pred_quality.get('margin', 'N/A'))}")
 
         with col2:
             st.markdown(f"<h4>{t('detection.disease_info')}</h4>", unsafe_allow_html=True)
@@ -270,6 +292,7 @@ def render_prediction_results(result, image_np, models):
 
         with col2:
             st.markdown(f"<h4 style='text-align: center;'>{t('detection.heatmap_view')}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='text-align: center;'>{t('detection.heatmap_title')}</h4>", unsafe_allow_html=True)
             heatmap_rgb = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB) if heatmap.shape[-1] == 3 and len(heatmap.shape) == 3 else heatmap
             st.image(heatmap_rgb, width='stretch')
 
@@ -282,6 +305,7 @@ def render_prediction_results(result, image_np, models):
             <div style="text-align: center; margin-top: 1rem;">
                 <p><strong>{t('detection.infected_area').format(pct=infection_pct)}</strong> |
                 <strong>{t('detection.severity_label').format(severity=severity_label)}</strong></p>
+                <p><strong>{t('detection.infected_area_label')}</strong> {infection_pct:.1f}% | <strong>{t('detection.severity_label_plain')}:</strong> {severity_result['severity']}</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -303,6 +327,16 @@ def render_prediction_results(result, image_np, models):
         st.markdown(f"""
             <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
                 <strong>{t('detection.urgency').format(urgency=recs.get('urgency', 'Normal'))}</strong>
+        cat_labels = {"chemical_treatment": t("detection.treatment_chemical"),
+                      "organic_treatment": t("detection.treatment_organic"),
+                      "fertilizer_suggestions": t("detection.treatment_fertilizer"),
+                      "irrigation_guidance": t("detection.treatment_irrigation"),
+                      "prevention_measures": t("detection.treatment_prevention"),
+                      "crop_management_tips": t("detection.treatment_management")}
+
+        st.markdown(f"""
+            <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
+                <strong>{t('detection.treatment_urgency_label', urgency=recs.get('urgency', 'Normal'))}</strong>
             </div>
         """, unsafe_allow_html=True)
 
@@ -315,6 +349,7 @@ def render_prediction_results(result, image_np, models):
 
     with tab4:
         st.markdown(f"<h4>{t('detection.why_diagnosis')}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4>{t('detection.explanation_title')}</h4>", unsafe_allow_html=True)
         for reason in explanation.get("prediction_rationale", []):
             st.markdown(f"- {reason}")
 
@@ -329,6 +364,7 @@ def render_prediction_results(result, image_np, models):
             st.metric(t("detection.metric_margin"), f"{conf.get('margin_over_second', 0):.1f}%")
 
         st.markdown(f"**{t('detection.reliability').format(reliability=conf.get('reliability', 'N/A'))}**")
+        st.markdown(f"**{t('detection.reliability', reliability=conf.get('reliability', 'N/A'))}**")
 
         similar = explanation.get("similar_diseases", [])
         if similar:
@@ -339,6 +375,7 @@ def render_prediction_results(result, image_np, models):
         st.markdown(f"<h4 style='margin-top: 1.5rem;'>{t('detection.model_interpretation')}</h4>", unsafe_allow_html=True)
         interp = explanation.get("model_interpretation", {})
         st.markdown(f"**{t('detection.decision_path').format(path=interp.get('decision_path', 'N/A'))}**")
+        st.markdown(f"**{t('detection.decision_path', path=interp.get('decision_path', 'N/A'))}**")
         st.markdown(f"**{t('detection.primary_factors')}**")
         for factor in interp.get("primary_factors", []):
             st.markdown(f"- {factor}")
@@ -354,6 +391,7 @@ def render_prediction_results(result, image_np, models):
 
         if st.button(t("detection.btn_generate_pdf"), type="primary", width='stretch'):
             with st.spinner(t("detection.spinner_pdf")):
+            with st.spinner(t("detection.generating_pdf")):
                 try:
                     from utils.pdf_generator import PDFGenerator
                     pdf_gen = PDFGenerator()
@@ -387,6 +425,7 @@ def render_prediction_results(result, image_np, models):
                     pdf_bytes, filename, pdf_path = pdf_gen.generate_report_bytes(report_data)
 
                     st.success(t("detection.pdf_success").format(filename=filename))
+                    st.success(t("detection.report_generated", filename=filename))
                     st.download_button(
                         label=t("detection.btn_download_pdf"),
                         data=pdf_bytes,
@@ -396,6 +435,7 @@ def render_prediction_results(result, image_np, models):
                     )
                 except Exception as e:
                     st.error(t("detection.pdf_error").format(error=str(e)))
+                    st.error(t("detection.error_pdf", error=str(e)))
 
         st.markdown("---")
         if st.button(t("detection.btn_save_db"), width='stretch', type="secondary"):
@@ -415,9 +455,15 @@ def render_prediction_results(result, image_np, models):
                 st.success(t("detection.db_success").format(id=pred_id))
             except Exception as e:
                 st.error(t("detection.db_error").format(error=str(e)))
+                st.success(t("detection.saved_to_db", id=pred_id))
+            except Exception as e:
+                st.error(t("detection.error_save", error=str(e)))
 
 
 def main():
+    if "language" not in st.session_state:
+        st.session_state["language"] = "en"
+    init_i18n(st.session_state["language"])
     load_css()
     render_header()
 
@@ -433,6 +479,11 @@ def main():
         """, unsafe_allow_html=True)
 
         input_method = st.radio(t("detection.input_method"), [t("detection.upload_image"), t("detection.capture_camera")], horizontal=True)
+                <h3 style="margin-bottom: 1rem;">{t('detection.upload_section')}</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        input_method = st.radio(t("detection.input_method"), [t("detection.upload_option"), t("detection.camera_option")], horizontal=True)
 
         image_np = None
         uploaded_file = None
@@ -440,6 +491,9 @@ def main():
         if input_method == t("detection.upload_image"):
             uploaded_file = st.file_uploader(
                 t("detection.choose_file"),
+        if input_method == t("detection.upload_option"):
+            uploaded_file = st.file_uploader(
+                t("detection.file_uploader"),
                 type=["jpg", "jpeg", "png", "webp", "tiff"],
                 label_visibility="collapsed"
             )
@@ -454,6 +508,7 @@ def main():
 
         else:
             img_file = st.camera_input(t("detection.capture_leaf"))
+            img_file = st.camera_input(t("detection.camera_label"))
             if img_file:
                 from utils.image_processor import ImageProcessor
                 processor = ImageProcessor()
@@ -462,11 +517,13 @@ def main():
 
         if image_np is not None:
             st.image(image_np, caption=t("detection.uploaded_image"), width='stretch')
+            st.image(image_np, caption=t("detection.uploaded_caption"), width='stretch')
 
     with col2:
         st.markdown(f"""
             <div class="dashboard-card">
                 <h3 style="margin-bottom: 1rem;">{t("detection.settings_section")}</h3>
+                <h3 style="margin-bottom: 1rem;">{t('detection.settings_section')}</h3>
             </div>
         """, unsafe_allow_html=True)
 
@@ -497,6 +554,9 @@ def main():
                 )
                 manual_crop = st.selectbox(
                     t("detection.manual_crop_select"),
+                st.warning(t("detection.crop_low_confidence", confidence=f"{crop_pred['confidence']*100:.1f}"))
+                manual_crop = st.selectbox(
+                    f"**{t('detection.select_crop_manual')}**",
                     [crop_pred["crop_name"]] + [c for c in sorted(models["model"].SUPPORTED_CROPS) if c != crop_pred["crop_name"]],
                     index=0
                 )
@@ -508,6 +568,12 @@ def main():
             st.session_state["weather_location"] = st.text_input(
                 t("detection.enter_weather"),
                 placeholder=t("detection.weather_hint"),
+                st.success(t("detection.crop_confident", crop=crop_pred['crop_name'], confidence=f"{crop_pred['confidence']*100:.1f}"))
+                crop_hint = None
+
+            st.session_state["weather_location"] = st.text_input(
+                t("detection.weather_location"),
+                placeholder=t("detection.weather_placeholder"),
                 value=st.session_state.get("weather_location", "")
             )
 
@@ -515,6 +581,7 @@ def main():
 
             if st.button(t("detection.btn_detect"), type="primary", width='stretch'):
                 with st.spinner(t("detection.analysis_spinner")):
+                with st.spinner(t("detection.analyzing")):
                     try:
                         result = models["model"].predict(prepared, crop_hint=crop_hint)
 
@@ -531,6 +598,16 @@ def main():
 
     if image_np is not None and "last_result" not in st.session_state:
         st.info(t("detection.hint_detect"))
+                            st.error(t("detection.error_model"))
+                    except Exception as e:
+                        st.error(t("detection.error_detection", error=str(e)))
+                        import traceback
+                        st.error(traceback.format_exc())
+        else:
+            st.info(t("detection.waiting_upload"))
+
+    if image_np is not None and "last_result" not in st.session_state:
+        st.info(t("detection.waiting_click"))
 
 
 if __name__ == "__main__":
