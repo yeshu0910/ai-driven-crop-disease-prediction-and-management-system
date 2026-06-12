@@ -1,6 +1,8 @@
-import requests
 import logging
 from datetime import datetime, timedelta
+
+import requests
+
 from utils.config import OPENWEATHER_API_KEY, WEATHER_API_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -101,7 +103,7 @@ class WeatherAPI:
             daily_data[date_key]["descriptions"].append(item["weather"][0]["description"])
             daily_data[date_key]["weather_icons"].append(item["weather"][0]["icon"])
 
-        for date_key in sorted(list(daily_data.keys()))[:days]:
+        for date_key in sorted(daily_data.keys())[:days]:
             dd = daily_data[date_key]
             forecasts.append({
                 "date": date_key,

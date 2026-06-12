@@ -1,15 +1,23 @@
-import os
 import io
+import os
 from datetime import datetime
+
+from reportlab.lib.colors import HexColor, grey
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm, inch
-from reportlab.lib.colors import HexColor, black, white, grey
-from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Image,
-                                 Table, TableStyle, PageBreak)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
-from reportlab.platypus import KeepTogether
-from utils.config import REPORTS_DIR, PRIMARY_COLOR, SECONDARY_COLOR, ACCENT_COLOR
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    Image,
+    KeepTogether,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from utils.config import ACCENT_COLOR, PRIMARY_COLOR, REPORTS_DIR, SECONDARY_COLOR
 
 
 class PDFGenerator:
@@ -178,13 +186,13 @@ class PDFGenerator:
         is_healthy = "healthy" in disease_name.lower()
 
         if is_healthy:
-            status_style = self.styles['RiskLow']
+            self.styles['RiskLow']
         elif data.get("severity", "") == "Severe":
-            status_style = self.styles['RiskHigh']
+            self.styles['RiskHigh']
         elif data.get("severity", "") == "Moderate":
-            status_style = self.styles['RiskMedium']
+            self.styles['RiskMedium']
         else:
-            status_style = self.styles['RiskLow']
+            self.styles['RiskLow']
 
         diagnosis_data = [
             ["Disease Detected", disease_name],
@@ -273,7 +281,7 @@ class PDFGenerator:
                     category_name = category.replace("_", " ").title()
                     elements.append(Paragraph(category_name,
                                                self.styles['SubHeading']))
-                    for i, rec in enumerate(recs, 1):
+                    for _i, rec in enumerate(recs, 1):
                         elements.append(Paragraph(
                             f"&#8226; {rec}",
                             self.styles['InfoText']

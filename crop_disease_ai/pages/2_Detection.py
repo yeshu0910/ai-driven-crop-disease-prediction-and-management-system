@@ -1,13 +1,11 @@
-import streamlit as st
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from datetime import datetime
-import cv2
-from PIL import Image
-import io
 import sys
+from datetime import datetime
 from pathlib import Path
+
+import cv2
+import numpy as np
+import streamlit as st
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -25,14 +23,14 @@ def load_css():
 
 @st.cache_resource
 def get_models():
-    from utils.model_handler import ModelHandler
-    from utils.image_processor import ImageProcessor
-    from utils.severity_analyzer import SeverityAnalyzer
-    from utils.disease_knowledge_base import DiseaseKnowledgeBase
-    from utils.recommendation_engine import RecommendationEngine
-    from utils.explainable_ai import ExplainableAI
-    from utils.weather_api import WeatherAPI
     from database.db_manager import DatabaseManager
+    from utils.disease_knowledge_base import DiseaseKnowledgeBase
+    from utils.explainable_ai import ExplainableAI
+    from utils.image_processor import ImageProcessor
+    from utils.model_handler import ModelHandler
+    from utils.recommendation_engine import RecommendationEngine
+    from utils.severity_analyzer import SeverityAnalyzer
+    from utils.weather_api import WeatherAPI
     return {
         "model": ModelHandler(),
         "processor": ImageProcessor(),
@@ -57,15 +55,12 @@ def render_header():
 def render_step(number, title, status="pending"):
     status_icons = {"pending": "⏳", "active": "🔄", "done": "✅", "error": "❌"}
     icon = status_icons.get(status, "⏳")
-    cls = status
-    if status == "done":
-        return f'<div class="detection-step completed"><div class="step-header"><div class="step-indicator done">{icon}</div><strong>{title}</strong></div></div>'
-    elif status == "active":
-        return f'<div class="detection-step active"><div class="step-header"><div class="step-indicator active">{icon}</div><strong>{title}</strong></div><p style="color:var(--text-secondary);font-size:0.85rem;">Processing...</p></div>'
-    elif status == "error":
-        return f'<div class="detection-step" style="border-color:#e53935;"><div class="step-header"><div class="step-indicator" style="background:#ffebee;color:#e53935;">{icon}</div><strong style="color:#e53935;">{title}</strong></div></div>'
-    else:
-        return f'<div class="detection-step"><div class="step-header"><div class="step-indicator pending">{icon}</div><strong style="color:var(--text-muted);">{title}</strong></div></div>'
+    templates = {
+        "done": f'<div class="detection-step completed"><div class="step-header"><div class="step-indicator done">{icon}</div><strong>{title}</strong></div></div>',
+        "active": f'<div class="detection-step active"><div class="step-header"><div class="step-indicator active">{icon}</div><strong>{title}</strong></div><p style="color:var(--text-secondary);font-size:0.85rem;">Processing...</p></div>',
+        "error": f'<div class="detection-step" style="border-color:#e53935;"><div class="step-header"><div class="step-indicator" style="background:#ffebee;color:#e53935;">{icon}</div><strong style="color:#e53935;">{title}</strong></div></div>',
+    }
+    return templates.get(status, f'<div class="detection-step"><div class="step-header"><div class="step-indicator pending">{icon}</div><strong style="color:var(--text-muted);">{title}</strong></div></div>')
 
 
 def render_image_preview(image_np):
@@ -138,16 +133,16 @@ def render_prediction_results(result, image_np, models):
         st.warning(t("detection.unknown_crop_warning"))
 
     if is_unknown_disease:
-        st.markdown("""
+        st.markdown(f"""
             <div class="result-card" style="background:linear-gradient(135deg, #FB923C12, #FB923C06);
                  border:2px solid #FB923C;">
                 <h2 style="color:#FB923C;">⚠️ Unknown Disease</h2>
                 <p style="color:var(--text-secondary);">
-                    Crop: <strong>{}</strong> ·
+                    Crop: <strong>{crop_name}</strong> ·
                     Status: <strong>Model confidence too low for reliable diagnosis</strong>
                 </p>
             </div>
-        """.format(crop_name), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         st.warning("⚠️ **Model confidence too low for reliable diagnosis.** The AI model could not identify the disease with sufficient confidence. Consider uploading a clearer image or consulting an agricultural expert.")
         raw_top5 = result.get("raw_model_top5", [])
         if raw_top5:
@@ -205,7 +200,6 @@ def render_prediction_results(result, image_np, models):
                 <p>{t('detection.infection_label', pct=f'{infection_pct:.1f}')}</p>
             """, unsafe_allow_html=True)
 
-            box_class = "green" if is_healthy else ("orange" if severity_result["severity"] == "Mild" else "red")
             st.markdown(f"""
                 <div class="info-box {'green' if is_healthy else 'orange' if severity_result['severity']=='Mild' else 'red'}">
                     <strong>{t('detection.risk_level', level=severity_result['risk_level'])}</strong><br>
@@ -221,7 +215,7 @@ def render_prediction_results(result, image_np, models):
                 st.markdown(f"""
                     <div style="margin: 0.5rem 0; padding: 0.5rem; background: #e8f5e9; border-radius: 8px;">
                         <strong>{t('detection.identified_crop', crop=crop_name)}</strong>
-                        {t('detection.identified_confidence', pct=f'{crop_conf_pct:.0f}')}
+                        {t('detection.identified_confidence', pct=f'{crop_confidence:.0f}')}
                     </div>
                 """, unsafe_allow_html=True)
 
@@ -230,7 +224,7 @@ def render_prediction_results(result, image_np, models):
             if top5_crops and len(top5_crops) > 1:
                 max_score = max(c["score"] for c in top5_crops)
                 with st.expander(t("detection.top_candidate_crops"), expanded=is_low_confidence):
-                    for i, cp in enumerate(top5_crops):
+                    for _i, cp in enumerate(top5_crops):
                         bar_w = min(cp["score"] / max_score * 100, 100)
                         st.markdown(f"""
                             <div style="margin:0.15rem 0;">
@@ -379,8 +373,6 @@ def render_prediction_results(result, image_np, models):
                       "prevention_measures": t("detection.treatment_prevention"),
                       "crop_management_tips": t("detection.treatment_management")}
 
-        urg = recs.get("urgency", "Normal")
-        urg_color = "green" if "No" in urg or "Low" in urg else "orange"
         st.markdown(f"""
             <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
                 <strong>{t('detection.treatment_urgency_label', urgency=recs.get('urgency', 'Normal'))}</strong>
@@ -565,33 +557,42 @@ def main():
                 st.error(f"Image processing failed: {e}")
                 prepared = None
 
-            st.markdown(f"**{t('detection.crop_candidates')}**")
-            for cp in crop_pred["top_candidates"][:5]:
-                bar_w = min(cp["pct"], 100)
-                st.markdown(f"""
-                    <div style="margin: 0.2rem 0;">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                            <span>{cp['crop']}</span>
-                            <span>{cp['pct']:.1f}%</span>
-                        </div>
-                        <div class="severity-meter">
-                            <div class="severity-meter-fill" style="width: {bar_w}%;
-                                 background: {"#2e7d32" if cp['crop'] == crop_pred['crop_name'] else "#888"};"></div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+            crop_pred = None
+            crop_hint = None
+            try:
+                crop_pred = models["model"].predict_crop(prepared)
+            except Exception as e:
+                st.error(f"Crop detection failed: {e}")
 
-            if not crop_pred["is_confident"]:
-                st.warning(t("detection.crop_low_confidence", confidence=f"{crop_pred['confidence']*100:.1f}"))
-                manual_crop = st.selectbox(
-                    f"**{t('detection.select_crop_manual')}**",
-                    [crop_pred["crop_name"]] + [c for c in sorted(models["model"].SUPPORTED_CROPS) if c != crop_pred["crop_name"]],
-                    index=0
-                )
-                crop_hint = manual_crop
+            if crop_pred:
+                st.markdown(f"**{t('detection.crop_candidates')}**")
+                for _cp in crop_pred["top_candidates"][:5]:
+                    bar_w = min(_cp["pct"], 100)
+                    st.markdown(f"""
+                        <div style="margin: 0.2rem 0;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                                <span>{_cp['crop']}</span>
+                                <span>{_cp['pct']:.1f}%</span>
+                            </div>
+                            <div class="severity-meter">
+                                <div class="severity-meter-fill" style="width: {bar_w}%;
+                                     background: {"#2e7d32" if _cp['crop'] == crop_pred['crop_name'] else "#888"};"></div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                if not crop_pred["is_confident"]:
+                    st.warning(t("detection.crop_low_confidence", confidence=f"{crop_pred['confidence']*100:.1f}"))
+                    manual_crop = st.selectbox(
+                        f"**{t('detection.select_crop_manual')}**",
+                        [crop_pred["crop_name"]] + [c for c in sorted(models["model"].SUPPORTED_CROPS) if c != crop_pred["crop_name"]],
+                        index=0
+                    )
+                    crop_hint = manual_crop
+                else:
+                    st.success(t("detection.crop_confident", crop=crop_pred['crop_name'], confidence=f"{crop_pred['confidence']*100:.1f}"))
             else:
-                st.success(t("detection.crop_confident", crop=crop_pred['crop_name'], confidence=f"{crop_pred['confidence']*100:.1f}"))
-                crop_hint = None
+                st.info("Crop prediction unavailable; detection will use the disease model fallback.")
 
             st.session_state["weather_location"] = st.text_input(
                 t("detection.weather_location"),

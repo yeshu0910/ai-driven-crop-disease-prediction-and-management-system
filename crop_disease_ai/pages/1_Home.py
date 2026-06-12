@@ -1,10 +1,9 @@
-import streamlit as st
-import plotly.graph_objects as go
-import pandas as pd
-from datetime import datetime, timedelta
 import random
 import sys
 from pathlib import Path
+
+import plotly.graph_objects as go
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -40,7 +39,7 @@ def render_stat_cards(stats):
     ]
     colors = ["#2e7d32", "#4caf50", "#ff6f00", "#1976d2"]
 
-    for i, (col, icon, label, color) in enumerate(zip(cols, icons, labels, colors)):
+    for i, (col, icon, label, color) in enumerate(zip(cols, icons, labels, colors, strict=False)):
         value = list(stats.values())[i] if i < len(stats) else 0
         col.markdown(f"""
             <div class="dashboard-card animate-in" style="animation-delay: {i*0.1}s">
@@ -124,18 +123,18 @@ def render_quick_stats_chart():
     diseased_vals = [random.randint(5, 20) for _ in range(6)]
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(name=t("home.chart_healthy"), x=months, y=healthy,
-                          marker_color="#4caf50", text=healthy, textposition="auto"))
-    fig.add_trace(go.Bar(name=t("home.chart_diseased"), x=months, y=diseased,
-                          marker_color="#ff6f00", text=diseased, textposition="auto"))
+    fig.add_trace(go.Bar(name=t("home.chart_healthy"), x=months, y=healthy_vals,
+                          marker_color="#4caf50", text=healthy_vals, textposition="auto"))
+    fig.add_trace(go.Bar(name=t("home.chart_diseased"), x=months, y=diseased_vals,
+                          marker_color="#ff6f00", text=diseased_vals, textposition="auto"))
     fig.update_layout(
         barmode="group",
         title=t("home.chart_monthly_trends"),
         template="plotly_white",
         hovermode="x",
         height=350,
-        margin=dict(l=20, r=20, t=40, b=20),
-        legend=dict(orientation="h", y=1.1),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
+        legend={"orientation": "h", "y": 1.1},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )

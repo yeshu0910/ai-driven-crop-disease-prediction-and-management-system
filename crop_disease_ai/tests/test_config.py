@@ -4,9 +4,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.config import (
-    SUPPORTED_CROPS, DISEASE_CLASSES, SEVERITY_LEVELS,
-    IMG_SIZE, CONFIDENCE_THRESHOLD, OPENWEATHER_API_KEY,
-    BASE_DIR, ASSETS_DIR, DATABASE_DIR, MODELS_DIR, REPORTS_DIR
+    ASSETS_DIR,
+    BASE_DIR,
+    CONFIDENCE_THRESHOLD,
+    DATABASE_DIR,
+    DISEASE_CLASSES,
+    IMG_SIZE,
+    MODELS_DIR,
+    REPORTS_DIR,
+    SEVERITY_LEVELS,
+    SUPPORTED_CROPS,
 )
 
 
@@ -49,7 +56,7 @@ def test_severity_levels():
 
 
 def test_severity_level_properties():
-    for level, props in SEVERITY_LEVELS.items():
+    for _level, props in SEVERITY_LEVELS.items():
         assert "color" in props
         assert "icon" in props
         assert "risk" in props

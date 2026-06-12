@@ -1,14 +1,16 @@
-import numpy as np
 import sys
 from pathlib import Path
+
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 indices = np.load('models/class_indices.npy', allow_pickle=True).item()
 print(f"Total classes in model: {len(indices)}")
 print()
 
-from utils.config import DISEASE_CLASSES, SUPPORTED_CROPS
-from utils.model_handler import ModelHandler
+from utils.config import DISEASE_CLASSES, SUPPORTED_CROPS  # noqa: E402
+from utils.model_handler import ModelHandler  # noqa: E402
 
 class_names = {v: k for k, v in indices.items()}
 
@@ -70,7 +72,7 @@ if not rice_model_keys:
     print("  *** ROOT CAUSE: RICE IS NOT IN THE MODEL ***")
     print(f"  Model only has {len(indices)} classes, Rice starts at index 68 in DISEASE_CLASSES")
     print(f"  The dummy training only used the first {len(indices)} DISEASE_CLASSES keys")
-    print(f"  Rice is at positions 68-71 in DISEASE_CLASSES dict (Python 3.7+ preserves order)")
+    print("  Rice is at positions 68-71 in DISEASE_CLASSES dict (Python 3.7+ preserves order)")
 
 print("\n--- CRITICAL: CHILI CHECK ---")
 chili_config = [v for k, v in DISEASE_CLASSES.items() if v.startswith("Chili")]
@@ -88,7 +90,8 @@ else:
     print("  Sizes match.")
 
 print("\n--- MODEL QUALITY CHECK ---")
-import tensorflow as tf
+import tensorflow as tf  # noqa: E402
+
 model = tf.keras.models.load_model('models/plant_disease_model.h5')
 dummy_data = np.random.rand(10, 224, 224, 3)
 dummy_labels = np.eye(57)[:10]

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,7 +14,7 @@ REPORTS_DIR = BASE_DIR / "reports"
 DATA_DIR = BASE_DIR / "data"
 TRAINING_DIR = BASE_DIR / "training"
 
-for d in [REPORTS_DIR, DATA_DIR]:
+for d in [MODELS_DIR, REPORTS_DIR, DATA_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")

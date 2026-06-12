@@ -29,7 +29,6 @@ def test_save_prediction():
     assert pred is not None
     assert pred["crop_name"] == "Tomato"
     assert pred["disease_name"] == "Tomato Healthy"
-    return pred_id
 
 
 def test_get_summary_stats():

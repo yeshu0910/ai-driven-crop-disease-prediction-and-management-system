@@ -1,9 +1,18 @@
+import logging
+
+import cv2
 import numpy as np
 import tensorflow as tf
-import cv2
-from pathlib import Path
-import logging
-from utils.config import MODEL_PATH, CLASS_INDICES_PATH, CONFIDENCE_THRESHOLD, CROP_CONFIDENCE_THRESHOLD, DISEASE_CLASSES, SUPPORTED_CROPS, IMG_SIZE
+
+from utils.config import (
+    CLASS_INDICES_PATH,
+    CONFIDENCE_THRESHOLD,
+    CROP_CONFIDENCE_THRESHOLD,
+    DISEASE_CLASSES,
+    IMG_SIZE,
+    MODEL_PATH,
+    SUPPORTED_CROPS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +83,8 @@ class ModelHandler:
         crop_name_h, crop_confidence_h, top5_crops = crop_analysis
         all_crop_scores = {c: round(s, 1) for c, s in top5_crops}
 
-        DISEASE_UNKNOWN_THRESHOLD = 0.75
-        MODEL_RELIABLE_THRESHOLD = 0.85
+        disease_unknown_threshold = 0.75
+        model_reliable_threshold = 0.85
 
         effective_crop = crop_name_h
         if crop_hint and crop_hint in SUPPORTED_CROPS:
@@ -147,7 +156,7 @@ class ModelHandler:
 
         model_is_reliable = (
             model_predictions is not None
-            and best_confidence >= MODEL_RELIABLE_THRESHOLD
+            and best_confidence >= model_reliable_threshold
             and best_disease is not None
         )
 
@@ -160,7 +169,7 @@ class ModelHandler:
                 best_confidence = feature_conf
                 top_5_predictions = raw_model_all[:5] if raw_model_all else []
 
-        if best_disease is None or best_confidence < DISEASE_UNKNOWN_THRESHOLD:
+        if best_disease is None or best_confidence < disease_unknown_threshold:
             return self._build_unknown_result(
                 top5_crops, effective_crop,
                 model_predictions=model_predictions,
@@ -311,9 +320,7 @@ class ModelHandler:
         if validation_errors and len(validation_errors) > 0:
             return False
         sorted_probs = sorted(probs, reverse=True)
-        if len(sorted_probs) > 1 and (sorted_probs[0] - sorted_probs[1]) < 0.05:
-            return False
-        return True
+        return not (len(sorted_probs) > 1 and sorted_probs[0] - sorted_probs[1] < 0.05)
 
     def _analyze_image(self, image_array):
         img = image_array[0] if image_array.shape[0] == 1 and len(image_array.shape) == 4 else image_array
@@ -470,7 +477,7 @@ class ModelHandler:
         dark_pct = features.get("dark_pct", 0)
         white_pct = features.get("white_pct", 0)
 
-        disease_score = yellow_pct * 0.5 + brown_pct * 0.8 + dark_pct * 0.3 + white_pct * 0.4
+        yellow_pct * 0.5 + brown_pct * 0.8 + dark_pct * 0.3 + white_pct * 0.4
 
         crop_disease_list = [
             v for k, v in DISEASE_CLASSES.items()
@@ -533,9 +540,9 @@ class ModelHandler:
         crop_name_h, crop_confidence_h, top5_crops = crop_analysis
         crop_name = crop_name_h
 
-        UNKNOWN_THRESHOLD = 0.20
+        unknown_threshold = 0.20
 
-        if crop_confidence_h < UNKNOWN_THRESHOLD:
+        if crop_confidence_h < unknown_threshold:
             crop_name = "Unknown"
             disease_name = "Unknown Crop"
             confidence = 0.0
@@ -555,7 +562,7 @@ class ModelHandler:
             else:
                 model_used = "image_analysis"
 
-            crop_disease_list = [
+            [
                 v for k, v in DISEASE_CLASSES.items()
                 if v.startswith(crop_name_h)
             ]

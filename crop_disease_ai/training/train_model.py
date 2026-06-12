@@ -2,23 +2,27 @@
 Model training script for crop disease classification.
 Trains a CNN on the PlantVillage dataset or creates a demo model.
 """
-import os
-import sys
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, models, applications
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-import json
 import logging
+import sys
 from pathlib import Path
+
+import numpy as np
+from tensorflow import keras
+from tensorflow.keras import applications, layers, models
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.config import (
-    MODELS_DIR, DATA_DIR, IMG_SIZE, BATCH_SIZE, EPOCHS,
-    LEARNING_RATE, TARGET_ACCURACY, DISEASE_CLASSES
+    BATCH_SIZE,
+    DATA_DIR,
+    DISEASE_CLASSES,
+    EPOCHS,
+    IMG_SIZE,
+    LEARNING_RATE,
+    MODELS_DIR,
+    TARGET_ACCURACY,
 )
 
 logging.basicConfig(level=logging.INFO)

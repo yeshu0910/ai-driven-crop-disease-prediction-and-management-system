@@ -1,4 +1,3 @@
-import numpy as np
 from utils.config import SEVERITY_LEVELS
 
 

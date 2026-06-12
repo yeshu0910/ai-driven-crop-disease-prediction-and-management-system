@@ -1,10 +1,14 @@
 import sys
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from utils.image_processor import ImageProcessor
+import pytest
+
+pytest.importorskip("cv2")
+from utils.image_processor import ImageProcessor  # noqa: E402
 
 
 def test_preprocess_image_rgb():

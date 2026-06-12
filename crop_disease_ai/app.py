@@ -1,6 +1,7 @@
-import streamlit as st
 import sys
 from pathlib import Path
+
+import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -160,7 +161,7 @@ def render_main():
             (t("home.quick_action_history"), t("home.quick_action_history_label"), t("home.quick_action_history_desc"), "pages/6_History.py"),
             (t("home.quick_action_about"), t("home.quick_action_about_label"), t("home.quick_action_about_desc"), "pages/7_About.py")
         ]
-        for icon, label, desc, page in quick_actions:
+        for icon, label, desc, _page in quick_actions:
             st.markdown(f"""
                 <div class="feature-card glow-card" style="margin-bottom:0;cursor:pointer;">
                     <div style="font-size:1.8rem;margin-bottom:0.5rem;">{icon}</div>

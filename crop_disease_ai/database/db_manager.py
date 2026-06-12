@@ -1,7 +1,8 @@
-import sqlite3
+import contextlib
 import json
-from datetime import datetime, date
-from pathlib import Path
+import sqlite3
+from datetime import date
+
 from utils.config import DB_PATH
 
 
@@ -158,16 +159,12 @@ class DatabaseManager:
         if result:
             d = dict(result)
             if d.get("weather_data"):
-                try:
+                with contextlib.suppress(json.JSONDecodeError, TypeError):
                     d["weather_data"] = json.loads(d["weather_data"])
-                except (json.JSONDecodeError, TypeError):
-                    pass
             if d.get("treatment_recommendations"):
-                try:
+                with contextlib.suppress(json.JSONDecodeError, TypeError):
                     d["treatment_recommendations"] = json.loads(
                         d["treatment_recommendations"])
-                except (json.JSONDecodeError, TypeError):
-                    pass
             return d
         return None
 
