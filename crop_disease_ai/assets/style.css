@@ -1,11 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 import os
+from pathlib import Path
+import streamlit as st
+
 
 def load_css():
-    css_path = os.path.join(os.path.dirname(__file__), "assets/style.css")
-    with open(css_path) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    # Find the directory where 2_Detection.py lives
+    current_dir = Path(__file__).parent  # crop_disease_ai/pages/
 
+    # Go up one level to the crop_disease_ai folder, then into assets
+    css_path = current_dir.parent / "assets" / "style.css"
+
+    try:
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"Looking for CSS at: {css_path}")
 :root {
     --primary: #2e7d32;
     --primary-dark: #1b5e20;
