@@ -15,10 +15,18 @@ st.set_page_config(
 
 
 def load_css():
-    css_path = Path("assets/style.css")
+    css_path = Path(__file__).resolve().parent / "assets" / "style.css"
     if css_path.exists():
         with open(str(css_path)) as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+def render_ambient_background():
+    st.markdown("""
+        <div class="ambient-blob ambient-blob-1"></div>
+        <div class="ambient-blob ambient-blob-2"></div>
+        <div class="ambient-blob ambient-blob-3"></div>
+    """, unsafe_allow_html=True)
 
 
 def init_session_state():
@@ -58,9 +66,22 @@ def render_sidebar():
             t("nav.about"): "7_About.py"
         }
 
-        for label, page_file in pages.items():
-            if st.button(label, width='stretch',
-                         type="secondary" if st.session_state.get("current_page") != page_file else "primary"):
+        pages = [
+            ("🏠", "Home", "1_Home.py"),
+            ("🔬", "Disease Detection", "2_Detection.py"),
+            ("📊", "Analytics", "3_Analytics.py"),
+            ("📖", "Knowledge Base", "4_Knowledge_Base.py"),
+            ("🌤️", "Weather", "5_Weather.py"),
+            ("📋", "History", "6_History.py"),
+            ("ℹ️", "About", "7_About.py"),
+        ]
+
+        current = st.session_state.get("current_page", "")
+        for icon, label, page_file in pages:
+            is_active = current == page_file
+            btn_type = "primary" if is_active else "secondary"
+            if st.button(f"{icon} {label}", key=f"nav_{page_file}",
+                         type=btn_type, width='stretch'):
                 st.session_state["current_page"] = page_file
                 st.switch_page(f"pages/{page_file}")
 
@@ -129,10 +150,8 @@ def render_main():
             </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
-        """, unsafe_allow_html=True)
-
+        st.markdown("<h3 class='section-title'>Quick Actions</h3>", unsafe_allow_html=True)
+        st.markdown('<div class="feature-grid">', unsafe_allow_html=True)
         quick_actions = [
             (t("home.quick_action_detect"), t("home.quick_action_detect_label"), t("home.quick_action_detect_desc"), "pages/2_Detection.py"),
             (t("home.quick_action_analytics"), t("home.quick_action_analytics_label"), t("home.quick_action_analytics_desc"), "pages/3_Analytics.py"),
@@ -141,18 +160,14 @@ def render_main():
             (t("home.quick_action_history"), t("home.quick_action_history_label"), t("home.quick_action_history_desc"), "pages/6_History.py"),
             (t("home.quick_action_about"), t("home.quick_action_about_label"), t("home.quick_action_about_desc"), "pages/7_About.py")
         ]
-
         for icon, label, desc, page in quick_actions:
             st.markdown(f"""
-                <div style="background: white; border-radius: 12px; padding: 1.2rem;
-                     box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;
-                     transition: all 0.3s; cursor: pointer;">
-                    <div style="font-size: 2rem;">{icon}</div>
-                    <h4 style="margin: 0.5rem 0 0.2rem; font-weight: 700;">{label}</h4>
-                    <p style="font-size: 0.8rem; color: #888; margin: 0;">{desc}</p>
+                <div class="feature-card glow-card" style="margin-bottom:0;cursor:pointer;">
+                    <div style="font-size:1.8rem;margin-bottom:0.5rem;">{icon}</div>
+                    <h4 style="font-weight:700;font-size:0.9rem;margin-bottom:0.25rem;color:var(--text);">{label}</h4>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">{desc}</p>
                 </div>
             """, unsafe_allow_html=True)
-
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
@@ -161,7 +176,6 @@ def render_main():
             <div class="dashboard-card" style="padding: 1.5rem;">
                 <h3 style="margin-bottom: 1rem;">{t('home.quick_stats')}</h3>
         """, unsafe_allow_html=True)
-
         stat_items = [
             ("🔬", t("home.stat_total_scans"), stats["total_scans"], "#2e7d32"),
             ("✅", t("home.stat_healthy_crops"), stats["healthy_scans"], "#4caf50"),
@@ -170,13 +184,12 @@ def render_main():
         ]
         for icon, label, value, color in stat_items:
             st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; align-items: center;
-                     padding: 0.6rem 0; border-bottom: 1px solid #f0f0f0;">
-                    <span>{icon} {label}</span>
-                    <span style="font-weight: 700; color: {color};">{value}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;
+                     padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;">
+                    <span style="color:var(--text-secondary);">{icon} {label}</span>
+                    <span style="font-weight:700;color:{color};">{value}</span>
                 </div>
             """, unsafe_allow_html=True)
-
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown(f"""

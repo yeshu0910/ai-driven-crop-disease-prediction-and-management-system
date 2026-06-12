@@ -13,7 +13,8 @@ REPORTS_DIR = BASE_DIR / "reports"
 DATA_DIR = BASE_DIR / "data"
 TRAINING_DIR = BASE_DIR / "training"
 
-REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+for d in [REPORTS_DIR, DATA_DIR]:
+    d.mkdir(parents=True, exist_ok=True)
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 WEATHER_API_BASE_URL = "https://api.openweathermap.org/data/2.5"
@@ -40,17 +41,17 @@ SUPPORTED_CROPS = [
 ]
 
 SEVERITY_LEVELS = {
-    "Healthy": {"color": "#2ecc71", "icon": "✅", "risk": "None"},
-    "Mild": {"color": "#f1c40f", "icon": "⚠️", "risk": "Low"},
-    "Moderate": {"color": "#e67e22", "icon": "🔶", "risk": "Medium"},
-    "Severe": {"color": "#e74c3c", "icon": "🔴", "risk": "High"}
+    "Healthy": {"color": "#2DD4BF", "icon": "✅", "risk": "None"},
+    "Mild": {"color": "#FB923C", "icon": "⚠️", "risk": "Low"},
+    "Moderate": {"color": "#A78BFA", "icon": "🔶", "risk": "Medium"},
+    "Severe": {"color": "#EC4899", "icon": "🔴", "risk": "High"}
 }
 
-PRIMARY_COLOR = "#2e7d32"
-SECONDARY_COLOR = "#1b5e20"
-ACCENT_COLOR = "#ff6f00"
-BG_COLOR = "#f5f5f5"
-CARD_BG = "#ffffff"
+PRIMARY_COLOR = "#5E6AD2"
+SECONDARY_COLOR = "#7C5CBF"
+ACCENT_COLOR = "#2DD4BF"
+BG_COLOR = "#0A0A0F"
+CARD_BG = "#12121A"
 
 DISEASE_CLASSES = {
     "Tomato___Bacterial_spot": "Tomato Bacterial Spot",

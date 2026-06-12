@@ -1,6 +1,5 @@
 import streamlit as st
 import plotly.graph_objects as go
-import plotly.express as px
 import pandas as pd
 from datetime import datetime, timedelta
 import random
@@ -11,12 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from utils.translator import init_i18n, t
 
-st.set_page_config(page_title="Home - Crop Disease AI", page_icon="🌱", layout="wide")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
+    if css_path.exists():
+        with open(str(css_path)) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 def render_header():
@@ -48,6 +49,7 @@ def render_stat_cards(stats):
                 <div class="card-value">{value}</div>
             </div>
         """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_features():
@@ -61,17 +63,15 @@ def render_features():
         {"icon": "📄", "title": t("home.feature_pdf_title"), "desc": t("home.feature_pdf_desc")},
         {"icon": "🔍", "title": t("home.feature_xai_title"), "desc": t("home.feature_xai_desc")},
     ]
-
-    cols = st.columns(3)
-    for i, feat in enumerate(features):
-        with cols[i % 3]:
-            st.markdown(f"""
-                <div class="dashboard-card" style="margin-bottom: 1.5rem; padding: 1.8rem;">
-                    <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">{feat['icon']}</div>
-                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">{feat['title']}</h3>
-                    <p style="color: #666; font-size: 0.9rem; line-height: 1.5;">{feat['desc']}</p>
-                </div>
-            """, unsafe_allow_html=True)
+    for feat in features:
+        st.markdown(f"""
+            <div class="feature-card card">
+                <div style="font-size:2.2rem;margin-bottom:0.5rem;">{feat['icon']}</div>
+                <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.4rem;">{feat['title']}</h3>
+                <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.5;">{feat['desc']}</p>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_supported_crops():
@@ -79,7 +79,7 @@ def render_supported_crops():
         ("Tomato", "🍅"), ("Potato", "🥔"), ("Rice", "🌾"), ("Wheat", "🌾"),
         ("Corn", "🌽"), ("Cotton", "🌿"), ("Soybean", "🫘"), ("Sugarcane", "🎋"),
         ("Groundnut", "🥜"), ("Sunflower", "🌻"), ("Banana", "🍌"), ("Mango", "🥭"),
-        ("Grapes", "🍇"), ("Apple", "🍎"), ("Chili", "🌶️")
+        ("Grapes", "🍇"), ("Apple", "🍎"), ("Chili", "🌶️"),
     ]
 
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.supported_crops')}</h2>", unsafe_allow_html=True)
@@ -107,32 +107,21 @@ def render_workflow():
         ("5", t("home.step5_title"), t("home.step5_desc")),
         ("6", t("home.step6_title"), t("home.step6_desc"))
     ]
-
-    cols = st.columns(6)
-    for i, (num, title, desc) in enumerate(steps):
-        with cols[i]:
-            st.markdown(f"""
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%;
-                         background: linear-gradient(135deg, #2e7d32, #1b5e20);
-                         color: white; display: flex; align-items: center;
-                         justify-content: center; margin: 0 auto 0.8rem;
-                         font-weight: 700; font-size: 1.1rem;">{num}</div>
-                    <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem;">{title}</h4>
-                    <p style="font-size: 0.75rem; color: #888; line-height: 1.4;">{desc}</p>
-                </div>
-            """, unsafe_allow_html=True)
-            if i < 5:
-                st.markdown("""
-                    <div style="text-align: center; color: #2e7d32; font-weight: 700;
-                         font-size: 1.2rem; margin-top: -2rem;">→</div>
-                """, unsafe_allow_html=True)
+    for num, title, desc in steps:
+        st.markdown(f"""
+            <div class="workflow-step">
+                <div class="step-number">{num}</div>
+                <h4>{title}</h4>
+                <p>{desc}</p>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_quick_stats_chart():
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-    healthy = [random.randint(10, 30) for _ in range(6)]
-    diseased = [random.randint(5, 20) for _ in range(6)]
+    healthy_vals = [random.randint(10, 30) for _ in range(6)]
+    diseased_vals = [random.randint(5, 20) for _ in range(6)]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(name=t("home.chart_healthy"), x=months, y=healthy,
@@ -146,7 +135,9 @@ def render_quick_stats_chart():
         hovermode="x",
         height=350,
         margin=dict(l=20, r=20, t=40, b=20),
-        legend=dict(orientation="h", y=1.1)
+        legend=dict(orientation="h", y=1.1),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(fig, width='stretch')
 
@@ -158,9 +149,13 @@ def main():
     load_css()
     render_header()
 
-    from database.db_manager import DatabaseManager
-    db = DatabaseManager()
-    stats = db.get_summary_stats()
+    try:
+        from database.db_manager import DatabaseManager
+        db = DatabaseManager()
+        stats = db.get_summary_stats()
+    except Exception:
+        stats = {"total_scans": 0, "healthy_scans": 0, "diseased_scans": 0,
+                 "total_crops": 15, "most_common_disease": "N/A"}
 
     if stats["total_scans"] == 0:
         stats = {"total_scans": 0, "healthy_scans": 0, "diseased_scans": 0,

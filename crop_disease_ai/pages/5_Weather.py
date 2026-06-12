@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from datetime import datetime, timedelta
 import sys
 from pathlib import Path
@@ -14,8 +13,10 @@ st.set_page_config(page_title="Weather Intelligence - Crop Disease AI", page_ico
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
+    if css_path.exists():
+        with open(str(css_path)) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -53,9 +54,9 @@ def render_current_weather(weather_data):
 
     source_badge = t("weather.source_live") if weather_data.get("source") == "api" else t("weather.source_simulated")
     st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <h3 style="margin: 0;">📍 {weather_data.get('location', 'Unknown')}</h3>
-            <span style="font-size: 0.8rem; color: #888;">{source_badge}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <h3 style="margin:0;font-size:1.1rem;">📍 {weather_data.get('location', 'Unknown')}</h3>
+            <span class="badge {'badge-blue' if weather_data.get('source') == 'api' else 'badge-orange'}">{source_badge}</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -70,10 +71,10 @@ def render_current_weather(weather_data):
     for i, (icon, label, value, color) in enumerate(metrics):
         with cols[i]:
             st.markdown(f"""
-                <div class="dashboard-card" style="text-align: center;">
-                    <div style="font-size: 1.5rem;">{icon}</div>
-                    <div class="card-label">{label}</div>
-                    <div class="card-value" style="font-size: 1.2rem; color: {color};">{value}</div>
+                <div class="stat-card animate-in" style="animation-delay:{i*0.05}s;">
+                    <div style="font-size:1.3rem;margin-bottom:0.2rem;">{icon}</div>
+                    <div class="stat-label">{label}</div>
+                    <div class="stat-value" style="font-size:1rem;color:{color};">{value}</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -86,9 +87,7 @@ def render_forecast(forecast_data):
         return
 
     forecasts = forecast_data["forecasts"]
-
     df = pd.DataFrame(forecasts)
-    df["date_display"] = pd.to_datetime(df["date"]).dt.strftime("%a<br>%d %b")
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -96,7 +95,7 @@ def render_forecast(forecast_data):
         mode="lines+markers",
         name=t("analytics.chart_temp_max"),
         line=dict(color="#e53935", width=2),
-        marker=dict(size=6)
+        marker=dict(size=6),
     ))
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["temp_min"],
@@ -105,13 +104,13 @@ def render_forecast(forecast_data):
         line=dict(color="#1e88e5", width=2),
         marker=dict(size=6),
         fill="tonexty",
-        fillcolor="rgba(30,136,229,0.1)"
+        fillcolor="rgba(30,136,229,0.1)",
     ))
     fig.update_layout(
         title=t("weather.forecast_temp"),
         template="plotly_white",
         hovermode="x",
-        height=300,
+        height=280,
         margin=dict(l=10, r=10, t=40, b=10),
         legend=dict(orientation="h", y=1.1),
         xaxis=dict(showgrid=False),
@@ -133,14 +132,13 @@ def render_forecast(forecast_data):
         mode="lines+markers",
         name=t("weather.metric_wind"),
         line=dict(color="#43a047", width=2),
-        marker=dict(size=6),
-        yaxis="y2"
+        marker=dict(size=6), yaxis="y2",
     ))
     fig2.update_layout(
         title=t("weather.forecast_humidity_wind"),
         template="plotly_white",
         hovermode="x",
-        height=300,
+        height=280,
         margin=dict(l=10, r=10, t=40, b=10),
         legend=dict(orientation="h", y=1.1),
         xaxis=dict(showgrid=False),
@@ -160,7 +158,6 @@ def render_disease_risk(risk_prediction, crop_name):
     overall = risk_prediction.get("overall_risk", {})
     risk_level = overall.get("risk_level", "Unknown")
     risk_score = overall.get("risk_score", 0)
-
     risk_color = {"Low": "#4caf50", "Medium": "#ff6f00", "High": "#e53935", "Unknown": "#888"}.get(risk_level, "#888")
 
     col1, col2 = st.columns([1, 2])
@@ -189,14 +186,13 @@ def render_disease_risk(risk_prediction, crop_name):
             df = pd.DataFrame(predictions)
             color_map = {"Low": "#4caf50", "Medium": "#ff6f00", "High": "#e53935"}
             df["color"] = df["risk_level"].map(color_map)
-
             fig = go.Figure()
             fig.add_trace(go.Bar(
                 x=df["date"], y=df["risk_score"],
                 marker_color=df["color"],
                 text=df["risk_level"],
                 textposition="outside",
-                hovertemplate="<b>%{x}</b><br>Risk: %{y:.1f}%<br>Level: %{text}<extra></extra>"
+                hovertemplate="<b>%{x}</b><br>Risk: %{y:.1f}%<br>Level: %{text}<extra></extra>",
             ))
             fig.update_layout(
                 title=t("weather.risk_daily", crop=crop_name),
@@ -218,7 +214,6 @@ def render_disease_risk(risk_prediction, crop_name):
 def render_weather_history(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('weather.history_title')}</h3>", unsafe_allow_html=True)
     logs = db.get_weather_logs(limit=20)
-
     if logs:
         df = pd.DataFrame(logs)
         df["logged_at_display"] = pd.to_datetime(df["logged_at"]).dt.strftime("%Y-%m-%d %H:%M")
@@ -261,21 +256,21 @@ def main():
             weather_data = weather_api.get_current_weather(location)
             forecast_data = weather_api.get_forecast(location, days=7)
 
-            if weather_data:
-                db.log_weather(
-                    location=weather_data.get("location", location),
-                    temperature=weather_data.get("temperature"),
-                    humidity=weather_data.get("humidity"),
-                    pressure=weather_data.get("pressure"),
-                    wind_speed=weather_data.get("wind_speed"),
-                    weather_description=weather_data.get("weather_description")
-                )
+                    if weather_data:
+                        db.log_weather(
+                            location=weather_data.get("location", location),
+                            temperature=weather_data.get("temperature"),
+                            humidity=weather_data.get("humidity"),
+                            pressure=weather_data.get("pressure"),
+                            wind_speed=weather_data.get("wind_speed"),
+                            weather_description=weather_data.get("weather_description"),
+                        )
 
-            st.session_state["weather_data"] = weather_data
-            st.session_state["forecast_data"] = forecast_data
+                    st.session_state["weather_data"] = weather_data
+                    st.session_state["forecast_data"] = forecast_data
 
-            risk = risk_predictor.predict_7_day_risk(crop_name, forecast_data)
-            st.session_state["risk_prediction"] = risk
+                    risk = risk_predictor.predict_7_day_risk(crop_name, forecast_data)
+                    st.session_state["risk_prediction"] = risk
 
             st.success(t("weather.updated_success"))
 
@@ -285,10 +280,8 @@ def main():
 
     if weather_data:
         render_current_weather(weather_data)
-
     if forecast_data:
         render_forecast(forecast_data)
-
     if risk_prediction:
         render_disease_risk(risk_prediction, crop_name)
 
