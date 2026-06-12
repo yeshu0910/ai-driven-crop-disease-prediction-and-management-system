@@ -283,11 +283,119 @@
     display: inline-block;
 }
 
+/* ===== Premium Selectbox Styling ===== */
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > label {
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    color: #555 !important;
+    padding-bottom: 0.1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.3rem !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div {
+    border-radius: 14px !important;
+    border: 2px solid #e0e0e0 !important;
+    background: #ffffff !important;
+    min-height: 44px !important;
+    padding: 0 0.75rem !important;
+    transition: all 0.25s ease !important;
+    box-shadow: none !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div:hover {
+    border-color: #bdbdbd !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div > div {
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] svg {
+    color: #888 !important;
+    transition: transform 0.2s ease !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"]:focus-within svg {
+    transform: rotate(180deg) !important;
+}
+
+/* Popover / Dropdown menu */
+div[data-baseweb="popover"] {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+    border: 1px solid #f0f0f0 !important;
+    overflow: hidden !important;
+    z-index: 999999 !important;
+}
+
+div[data-baseweb="popover"] li {
+    font-size: 0.95rem !important;
+    padding: 0.7rem 1rem !important;
+    transition: background 0.15s ease !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+div[data-baseweb="popover"] li:hover {
+    background: #f5f5f5 !important;
+}
+
+div[data-baseweb="popover"] li[aria-selected="true"] {
+    background: #e8f5e9 !important;
+    font-weight: 600 !important;
+    color: #2e7d32 !important;
+}
+
 /* Dark mode */
 .dark .dashboard-card,
 .dark .metric-card {
     background: var(--card-dark);
     color: var(--text-dark);
+}
+
+.dark section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > label {
+    color: #bbb !important;
+}
+
+.dark section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div {
+    background: var(--card-dark) !important;
+    border-color: #444 !important;
+}
+
+.dark section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div > div {
+    color: var(--text-dark) !important;
+}
+
+.dark section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div > div:hover {
+    border-color: #666 !important;
+}
+
+.dark section[data-testid="stSidebar"] div[data-testid="stSelectbox"] svg {
+    color: #999 !important;
+}
+
+.dark div[data-baseweb="popover"] {
+    background: var(--card-dark) !important;
+    border-color: #333 !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+}
+
+.dark div[data-baseweb="popover"] li {
+    color: var(--text-dark) !important;
+}
+
+.dark div[data-baseweb="popover"] li:hover {
+    background: rgba(255,255,255,0.08) !important;
+}
+
+.dark div[data-baseweb="popover"] li[aria-selected="true"] {
+    background: rgba(46,125,50,0.2) !important;
+    color: #81c784 !important;
 }
 
 .dark .dashboard-card .card-value {
