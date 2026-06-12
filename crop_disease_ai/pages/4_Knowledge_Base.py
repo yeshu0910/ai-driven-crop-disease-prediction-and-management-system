@@ -9,9 +9,18 @@ from utils.translator import init_i18n, t
 st.set_page_config(page_title="Knowledge Base - Crop Disease AI", page_icon="📖", layout="wide")
 
 
+from pathlib import Path
+import streamlit as st
+
+
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    current_dir = Path(__file__).parent
+    css_path = current_dir.parent / "assets" / "style.css"
+    try:
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"CSS path not found at: {css_path}")
 
 
 @st.cache_resource
