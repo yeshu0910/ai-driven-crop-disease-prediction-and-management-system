@@ -19,10 +19,16 @@ st.set_page_config(page_title="Disease Detection - Crop Disease AI", page_icon="
 
 
 def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    current_dir = Path(__file__).parent
+    css_path = current_dir.parent / "assets" / "style.css"
 
-
+    try:
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(
+            f"❌ CSS file not found! Python looked at this exact path: {css_path.resolve()}"
+        )
 @st.cache_resource
 def get_models():
     from utils.model_handler import ModelHandler
