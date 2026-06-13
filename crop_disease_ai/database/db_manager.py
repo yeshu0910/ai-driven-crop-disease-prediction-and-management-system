@@ -290,7 +290,7 @@ class DatabaseManager:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT * FROM analytics
-            WHERE date >= date('now', '-? days')
+            WHERE date >= date('now', '-' || ? || ' days')
             ORDER BY date ASC
         """, (days,))
         results = cursor.fetchall()
@@ -319,7 +319,7 @@ class DatabaseManager:
                    SUM(CASE WHEN disease_name LIKE '%healthy%' THEN 1 ELSE 0 END) as healthy,
                    SUM(CASE WHEN disease_name NOT LIKE '%healthy%' THEN 1 ELSE 0 END) as diseased
             FROM predictions
-            WHERE created_at >= date('now', '-? months')
+            WHERE created_at >= date('now', '-' || ? || ' months')
             GROUP BY month
             ORDER BY month ASC
         """, (months,))
