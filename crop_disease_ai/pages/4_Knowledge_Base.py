@@ -4,8 +4,6 @@ from pathlib import Path
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils.translator import t
-
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.knowledge_base"), page_icon="📖", layout="wide")
@@ -36,7 +34,6 @@ def render_header():
 def render_search_and_filter(kb):
     col1, col2 = st.columns([2, 1])
     with col1:
-        search_query = st.text_input(t("kb.search"), placeholder=t("kb.search_placeholder"))
         search_query = st.text_input(t("kb.search_label"), placeholder=t("kb.search_placeholder"))
     with col2:
         all_diseases = kb.get_all_diseases()
@@ -67,8 +64,7 @@ def render_disease_card(disease_name, info):
 
     affected = info.get("affected_crops", [])
     affected_html = f"""
-        <p><strong>{t('kb.affected_crops').format(crops=', '.join(affected) if affected else t('common.na'))}</strong></p>
-        <p><strong>{t('kb.affected_crops', crops=', '.join(affected) if affected else t('kb.see_crop_name'))}</strong></p>
+        <p><strong>{t('kb.affected_crops')}:</strong> {', '.join(affected) if affected else t('common.na')}</p>
     """
 
     favorable = info.get("favorable_conditions", "N/A")
@@ -104,8 +100,7 @@ def render_disease_card(disease_name, info):
 
             {severity_html}
             <div style="margin-top: 1rem;">{affected_html}</div>
-            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions').format(conditions=favorable)}</strong></p>
-            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions', conditions=favorable)}</strong></p>
+            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions')}:</strong> {favorable}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -127,7 +122,6 @@ def main():
     else:
         diseases = kb.get_all_diseases()
 
-    st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records').format(count=len(diseases))}</p>", unsafe_allow_html=True)
     st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records', count=len(diseases))}</p>", unsafe_allow_html=True)
 
     for disease_name in diseases:

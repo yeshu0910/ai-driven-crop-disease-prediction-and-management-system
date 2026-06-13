@@ -513,6 +513,13 @@ def main():
     load_css()
     render_header()
 
+    models_dir = Path(__file__).resolve().parent.parent / "models"
+    model_file = models_dir / "plant_disease_model.h5"
+    indices_file = models_dir / "class_indices.npy"
+    if not model_file.exists() or not indices_file.exists():
+        st.error("Model files missing. Please upload them to the models/ folder.")
+        st.stop()
+
     models = get_models()
 
     col1, col2 = st.columns([1, 1])

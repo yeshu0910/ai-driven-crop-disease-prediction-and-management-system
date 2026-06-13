@@ -6,8 +6,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils.translator import t
-
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.weather"), page_icon="🌤️", layout="wide")
@@ -80,7 +78,7 @@ def render_current_weather(weather_data):
             """, unsafe_allow_html=True)
 
 
-def render_forecast(forecast_data):
+def render_forecast(forecast_data, risk_prediction=None):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('weather.forecast_title')}</h3>", unsafe_allow_html=True)
 
     if not forecast_data or "forecasts" not in forecast_data:
@@ -149,9 +147,80 @@ def render_forecast(forecast_data):
     )
     st.plotly_chart(fig2, width='stretch')
 
+    if risk_prediction:
+        actions = risk_prediction.get("preventive_actions", [])
+        if actions:
+            with st.expander(t("weather.preventive_actions"), expanded=True):
+                for action in actions:
+                    st.markdown(f"- {action}")
+
+
+def render_disease_risk(risk_prediction, crop_name):
+    st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('weather.risk_title')}</h3>", unsafe_allow_html=True)
+
+    overall = risk_prediction.get("overall_risk", {})
+    risk_level = overall.get("risk_level", "Unknown")
+    risk_score = overall.get("risk_score", 0)
+
+    colors = {"Low": "#2DD4BF", "Medium": "#FB923C", "High": "#e53935"}
+    risk_color = colors.get(risk_level, "#888")
+    icon_map = {"Low": "🟢", "Medium": "🟡", "High": "🔴"}
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+            <div class="stat-card" style="text-align:center;">
+                <div style="font-size:0.8rem;color:var(--text-secondary);">{t('weather.overall_risk')}</div>
+                <div style="font-size:1.5rem;font-weight:700;color:{risk_color}">
+                    {icon_map.get(risk_level, '⚪')} {risk_level}
+                </div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Score: {risk_score:.1f}/100</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        high_days = risk_prediction.get("high_risk_days", 0)
+        st.markdown(f"""
+            <div class="stat-card" style="text-align:center;">
+                <div style="font-size:0.8rem;color:var(--text-secondary);">{t('weather.high_risk_days', count=high_days)}</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#e53935;">{high_days}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        med_days = risk_prediction.get("medium_risk_days", 0)
+        st.markdown(f"""
+            <div class="stat-card" style="text-align:center;">
+                <div style="font-size:0.8rem;color:var(--text-secondary);">{t('weather.medium_risk_days', count=med_days)}</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#FB923C;">{med_days}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    predictions = risk_prediction.get("predictions", [])
+    if predictions:
+        df = pd.DataFrame(predictions)
+        fig = go.Figure()
+        bar_colors = [colors.get(rl, "#888") for rl in df["risk_level"]]
+        fig.add_trace(go.Bar(
+            x=df["date"], y=df["risk_score"],
+            marker_color=bar_colors,
+            text=df["risk_level"],
+            textposition="outside",
+            hovertemplate="<b>%{x}</b><br>Risk: %{y:.1f}<br>Level: %{text}<extra></extra>"
+        ))
+        fig.update_layout(
+            title=t("weather.risk_daily_title", crop=crop_name),
+            template="plotly_white",
+            height=250,
+            margin={"l": 10, "r": 10, "t": 40, "b": 10},
+            yaxis={"title": "Risk Score", "range": [0, 100]},
+            xaxis={"showgrid": False},
+        )
+        st.plotly_chart(fig, width='stretch')
+
     actions = risk_prediction.get("preventive_actions", [])
     if actions:
-        with st.expander(t("weather.risk_preventive"), expanded=True):
+        with st.expander(t("weather.preventive_actions"), expanded=True):
             for action in actions:
                 st.markdown(f"- {action}")
 
@@ -197,6 +266,9 @@ def main():
         crop_name = st.selectbox(t("weather.crop_select"), SUPPORTED_CROPS, index=0)
 
     if st.button(t("weather.btn_update"), type="primary", width='stretch'):
+        if not location:
+            st.warning("Enter location")
+            st.stop()
         with st.spinner(t("weather.fetching")):
             weather_data = weather_api.get_current_weather(location)
             forecast_data = weather_api.get_forecast(location, days=7)
@@ -226,7 +298,7 @@ def main():
     if weather_data:
         render_current_weather(weather_data)
     if forecast_data:
-        render_forecast(forecast_data)
+        render_forecast(forecast_data, risk_prediction)
     if risk_prediction:
         render_disease_risk(risk_prediction, crop_name)
 
