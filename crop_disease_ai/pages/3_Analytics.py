@@ -7,7 +7,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils.translator import t
 
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.analytics"), page_icon="📊", layout="wide")
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title="Analytics - Crop Disease AI", page_icon="📊", layout="wide")
@@ -29,6 +31,8 @@ def get_db():
 def render_header():
     st.markdown(f"""
         <div class="main-header">
+            <h1>{t("analytics.title")}</h1>
+            <p>{t("analytics.subtitle")}</p>
             <h1>{t('analytics.title')}</h1>
             <p>{t('analytics.subtitle')}</p>
         </div>
@@ -38,6 +42,11 @@ def render_header():
 def render_summary_cards(stats):
     st.markdown('<div class="stat-grid">', unsafe_allow_html=True)
     metrics = [
+        ("🔬", t("stats.total_scans"), stats.get("total_scans", 0), "#2e7d32"),
+        ("✅", t("stats.healthy"), stats.get("healthy_scans", 0), "#4caf50"),
+        ("⚠️", t("stats.diseased"), stats.get("diseased_scans", 0), "#ff6f00"),
+        ("🌾", t("stats.crops_monitored"), stats.get("total_crops", 0), "#1976d2"),
+        ("🦠", t("stats.common_disease"), stats.get("most_common_disease", "N/A"), "#e53935")
         ("🔬", t("analytics.stat_total_scans"), stats.get("total_scans", 0), "#2e7d32"),
         ("✅", t("analytics.stat_healthy"), stats.get("healthy_scans", 0), "#4caf50"),
         ("⚠️", t("analytics.stat_diseased"), stats.get("diseased_scans", 0), "#ff6f00"),
@@ -73,6 +82,7 @@ def render_disease_frequency(db):
         )
         fig.update_layout(
             showlegend=False,
+            xaxis_title=t("stats.total_scans"),
             xaxis_title=t("analytics.chart_cases"),
             yaxis_title="",
             margin={"l": 10, "r": 10, "t": 10, "b": 10},
@@ -93,17 +103,20 @@ def render_monthly_trends(db):
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=df["month"], y=df["total"],
+            mode="lines+markers", name=t("stats.total_scans"),
             mode="lines+markers", name=t("analytics.chart_total_scans"),
             line={"color": "#2e7d32", "width": 3},
             marker={"size": 8},
         ))
         fig.add_trace(go.Bar(
             x=df["month"], y=df["healthy"],
+            name=t("stats.healthy"), marker_color="#4caf50",
             name=t("analytics.chart_healthy"), marker_color="#4caf50",
             opacity=0.7
         ))
         fig.add_trace(go.Bar(
             x=df["month"], y=df["diseased"],
+            name=t("stats.diseased"), marker_color="#ff6f00",
             name=t("analytics.chart_diseased"), marker_color="#ff6f00",
             opacity=0.7
         ))
@@ -119,6 +132,11 @@ def render_monthly_trends(db):
         )
         st.plotly_chart(fig, width='stretch')
     else:
+        st.info(t("analytics.no_trends"))
+
+
+def render_crop_health_pie(db):
+    st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('analytics.health_distribution')}</h3>", unsafe_allow_html=True)
         st.info(t("analytics.no_monthly_data"))
 
 
@@ -130,6 +148,7 @@ def render_crop_health_pie(db):
     diseased = stats.get("diseased_scans", 0)
     if total > 0:
         fig = go.Figure(data=[go.Pie(
+            labels=[t("stats.healthy"), t("stats.diseased")],
             labels=[t("analytics.chart_healthy_label"), t("analytics.chart_diseased_label")],
             values=[healthy, diseased],
             marker_colors=["#4caf50", "#ff6f00"],
@@ -146,6 +165,7 @@ def render_crop_health_pie(db):
         )
         st.plotly_chart(fig, width='stretch')
     else:
+        st.info(t("analytics.no_health"))
         st.info(t("analytics.no_health_data"))
 
 
@@ -159,6 +179,12 @@ def render_recent_detections(db):
             if created and isinstance(created, str) and "T" in created:
                 created = created.split(".")[0].replace("T", " ")
             data.append({
+                t("common.date"): created or "N/A",
+                t("common.crop"): p.get("crop_name", "N/A"),
+                t("common.disease"): p.get("disease_name", "N/A"),
+                t("common.confidence"): f"{p.get('confidence', 0)*100:.1f}%",
+                t("common.severity"): p.get("severity", "N/A"),
+                t("common.risk"): p.get("risk_level", "N/A")
                 t("analytics.table_date"): created or "N/A",
                 t("analytics.table_crop"): p.get("crop_name", "N/A"),
                 t("analytics.table_disease"): p.get("disease_name", "N/A"),
@@ -185,6 +211,7 @@ def render_analytics_overview(db):
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["total_scans"],
             mode="lines+markers",
+            name=t("stats.total_scans"),
             name=t("analytics.chart_total_scans"),
             line={"color": "#2e7d32", "width": 2},
             fill="tozeroy",
@@ -193,12 +220,14 @@ def render_analytics_overview(db):
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["healthy_scans"],
             mode="lines+markers",
+            name=t("stats.healthy"),
             name=t("analytics.chart_healthy"),
             line={"color": "#4caf50", "width": 2}
         ))
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["diseased_scans"],
             mode="lines+markers",
+            name=t("stats.diseased"),
             name=t("analytics.chart_diseased"),
             line={"color": "#ff6f00", "width": 2}
         ))
@@ -213,6 +242,7 @@ def render_analytics_overview(db):
         )
         st.plotly_chart(fig, width='stretch')
     else:
+        st.info(t("analytics.no_daily"))
         st.info(t("analytics.no_daily_data"))
 
 
@@ -251,6 +281,16 @@ def main():
             st.markdown(f"""
                 <div class="card">
                     <div class="info-box {'green' if healthy_pct > 50 else 'orange'}">
+                        <strong>{t('analytics.crop_health_rate').format(pct=healthy_pct)}</strong><br>
+                        <strong>{t('analytics.disease_incidence').format(pct=disease_pct)}</strong>
+                    </div>
+                    <div class="info-box blue" style="margin-top: 0.5rem;">
+                        <strong>{t('analytics.most_common_disease').format(disease=stats.get('most_common_disease', 'N/A'))}</strong><br>
+                        <strong>{t('analytics.cases').format(count=stats.get('most_common_count', 0))}</strong>
+                    </div>
+                    <div class="info-box blue" style="margin-top: 0.5rem;">
+                        <strong>{t('analytics.crops_monitored').format(count=stats.get('total_crops', 0))}</strong><br>
+                        <strong>{t('analytics.total_entries').format(count=stats['total_scans'])}</strong>
                         <strong>{t('analytics.crop_health_rate', pct=f'{healthy_pct:.1f}')}</strong><br>
                         <strong>{t('analytics.disease_incidence', pct=f'{disease_pct:.1f}')}</strong>
                     </div>

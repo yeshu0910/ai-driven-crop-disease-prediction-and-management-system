@@ -61,8 +61,8 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --frozen --group dev
-      - run: uv run bandit -r src/ -f json -o bandit-report.json || true
-      - run: uv run bandit -r src/
+      - run: uv run bandit -r crop_disease_ai/ -f json -o bandit-report.json || true
+      - run: uv run bandit -r crop_disease_ai/
 
   dead-code-vulture:
     name: Vulture
@@ -76,7 +76,7 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --frozen --group dev
-      - run: uv run vulture src/ tests/ --min-confidence 80
+      - run: uv run vulture crop_disease_ai/ tests/ --min-confidence 80
 
   lint-pylint:
     name: Pylint
@@ -90,7 +90,7 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --frozen --group dev
-      - run: uv run pylint src/
+      - run: uv run pylint crop_disease_ai/
 
   lint-flake8:
     name: Flake8
@@ -104,7 +104,7 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --frozen --group dev
-      - run: uv run flake8 src/
+      - run: uv run flake8 crop_disease_ai/
 
   security-semgrep:
     name: Semgrep
@@ -118,7 +118,7 @@ jobs:
         with:
           version: "latest"
       - run: uv sync --frozen --group dev
-      - run: uv run semgrep --config=auto --error src/
+      - run: uv run semgrep --config=auto --error crop_disease_ai/
 
   upgrade-pyupgrade:
     name: Pyupgrade
@@ -133,9 +133,9 @@ jobs:
           version: "latest"
       - run: uv sync --frozen --group dev
       - run: |
-          uv run pyupgrade --py311-plus src tests
+          uv run pyupgrade --py311-plus crop_disease_ai tests
           if [ -n "$(git diff)" ]; then
-            echo "::error::Run 'pyupgrade --py311-plus src tests' to fix."
+            echo "::error::Run 'pyupgrade --py311-plus crop_disease_ai tests' to fix."
             git diff --stat
             exit 1
           fi

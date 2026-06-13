@@ -4,7 +4,9 @@ from pathlib import Path
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from utils.translator import t
 
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.knowledge_base"), page_icon="📖", layout="wide")
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title="Knowledge Base - Crop Disease AI", page_icon="📖", layout="wide")
@@ -26,6 +28,8 @@ def get_knowledge_base():
 def render_header():
     st.markdown(f"""
         <div class="main-header">
+            <h1>{t("kb.title")}</h1>
+            <p>{t("kb.subtitle")}</p>
             <h1>{t('kb.title')}</h1>
             <p>{t('kb.subtitle')}</p>
         </div>
@@ -35,6 +39,7 @@ def render_header():
 def render_search_and_filter(kb):
     col1, col2 = st.columns([2, 1])
     with col1:
+        search_query = st.text_input(t("kb.search"), placeholder=t("kb.search_placeholder"))
         search_query = st.text_input(t("kb.search_label"), placeholder=t("kb.search_placeholder"))
     with col2:
         all_diseases = kb.get_all_diseases()
@@ -52,6 +57,7 @@ def render_disease_card(disease_name, info):
         severity_html = f"<h4 style='margin-top: 1rem;'>{t('kb.severity_indicators')}</h4>"
         for level, desc in severity.items():
             color = {"Mild": "#f1c40f", "Moderate": "#e67e22", "Severe": "#e74c3c"}.get(level, "#333")
+            level_label = t("severity." + level.lower()) if level.lower() in ["healthy", "mild", "moderate", "severe"] else level
             severity_html += f"""
                 <div style="display:flex;align-items:center;margin:0.25rem 0;font-size:0.85rem;">
                     <span style="background:{color};color:white;padding:0.1rem 0.5rem;
@@ -64,6 +70,7 @@ def render_disease_card(disease_name, info):
 
     affected = info.get("affected_crops", [])
     affected_html = f"""
+        <p><strong>{t('kb.affected_crops').format(crops=', '.join(affected) if affected else t('common.na'))}</strong></p>
         <p><strong>{t('kb.affected_crops', crops=', '.join(affected) if affected else t('kb.see_crop_name'))}</strong></p>
     """
 
@@ -100,6 +107,7 @@ def render_disease_card(disease_name, info):
 
             {severity_html}
             <div style="margin-top: 1rem;">{affected_html}</div>
+            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions').format(conditions=favorable)}</strong></p>
             <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions', conditions=favorable)}</strong></p>
         </div>
     """, unsafe_allow_html=True)
@@ -115,6 +123,7 @@ def main():
     kb = get_knowledge_base()
     search_query, crop_filter = render_search_and_filter(kb)
 
+    if crop_filter != t("kb.all_crops"):
     if crop_filter != t("kb.filter_all"):
         diseases = kb.filter_by_crop(crop_filter)
     elif search_query:
@@ -122,6 +131,7 @@ def main():
     else:
         diseases = kb.get_all_diseases()
 
+    st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records').format(count=len(diseases))}</p>", unsafe_allow_html=True)
     st.markdown(f"<p style='color: #888; margin-bottom: 1rem;'>{t('kb.showing_records', count=len(diseases))}</p>", unsafe_allow_html=True)
 
     for disease_name in diseases:
