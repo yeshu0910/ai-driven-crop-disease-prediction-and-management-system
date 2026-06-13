@@ -34,13 +34,13 @@ def render_header():
 def render_search_and_filter(kb):
     col1, col2 = st.columns([2, 1])
     with col1:
-        search_query = st.text_input(t("kb.search_label"), placeholder=t("kb.search_placeholder"))
+        search_query = st.text_input(t("kb.search"), placeholder=t("kb.search_placeholder"))
     with col2:
         all_diseases = kb.get_all_diseases()
         crop_names = sorted({
             name.split(" ")[0] for name in all_diseases if " " in name
         })
-        crop_filter = st.selectbox(t("kb.filter_label"), [t("kb.filter_all")] + crop_names)
+        crop_filter = st.selectbox(t("kb.filter_crop"), [t("kb.all_crops")] + crop_names)
     return search_query, crop_filter
 
 
