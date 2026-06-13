@@ -6,8 +6,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils.translator import t
-
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.weather"), page_icon="🌤️", layout="wide")
@@ -80,7 +78,7 @@ def render_current_weather(weather_data):
             """, unsafe_allow_html=True)
 
 
-def render_forecast(forecast_data):
+def render_forecast(forecast_data, risk_prediction=None):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('weather.forecast_title')}</h3>", unsafe_allow_html=True)
 
     if not forecast_data or "forecasts" not in forecast_data:
@@ -149,12 +147,15 @@ def render_forecast(forecast_data):
     )
     st.plotly_chart(fig2, width='stretch')
 
-    actions = risk_prediction.get("preventive_actions", [])
-    if actions:
-        with st.expander(t("weather.risk_preventive"), expanded=True):
-            for action in actions:
-                st.markdown(f"- {action}")
+   actions = []
 
+if risk_prediction:
+    actions = risk_prediction.get("preventive_actions", [])
+
+if actions:
+    with st.expander(t("weather.risk_preventive"), expanded=True):
+        for action in actions:
+            st.markdown(f"- {action}")
 
 def render_weather_history(db):
     st.markdown(f"<h3 style='margin: 1.5rem 0 1rem;'>{t('weather.history_title')}</h3>", unsafe_allow_html=True)
@@ -225,8 +226,8 @@ def main():
 
     if weather_data:
         render_current_weather(weather_data)
-    if forecast_data:
-        render_forecast(forecast_data)
+  if forecast_data:
+    render_forecast(forecast_data, risk_prediction)
     if risk_prediction:
         render_disease_risk(risk_prediction, crop_name)
 
