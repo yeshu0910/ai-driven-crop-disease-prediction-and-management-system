@@ -50,29 +50,21 @@ def render_search_and_filter(kb):
 def render_disease_card(disease_name, info):
     severity = info.get("severity_indicators", {})
     severity_html = ""
+
     if severity:
-        severity_html = f"<h4 style='margin-top: 1rem;'>{t('kb.severity_indicators')}</h4>"
-        for level, desc in severity.items():
-            color = {"Mild": "#f1c40f", "Moderate": "#e67e22", "Severe": "#e74c3c"}.get(level, "#333")
-            level_label = t("severity." + level.lower()) if level.lower() in ["healthy", "mild", "moderate", "severe"] else level
-            severity_html += f"""
-                <div style="display:flex;align-items:center;margin:0.25rem 0;font-size:0.85rem;">
-                    <span style="background:{color};color:white;padding:0.1rem 0.5rem;
-                         border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.5rem;flex-shrink:0;">
-                        {level}
-                    </span>
-                    <span style="color:var(--text-secondary);">{desc}</span>
-                </div>
-            """
+        severity_html = "..."
+        # loop here
 
     affected = info.get("affected_crops", [])
-   affected_html = f"""
-    <p><strong>{
-        t('kb.affected_crops').format(
-            crops=', '.join(affected) if affected else t('common.na')
-        )
-    }</strong></p>
-"""
+
+    affected_html = f"""
+        <p><strong>{
+            t('kb.affected_crops').format(
+                crops=', '.join(affected) if affected else t('common.na')
+            )
+        }</strong></p>
+    """
+
     favorable = info.get("favorable_conditions", "N/A")
 
     st.markdown(f"""
