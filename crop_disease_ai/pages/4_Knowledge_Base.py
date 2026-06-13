@@ -97,8 +97,8 @@ def render_disease_card(disease_name, info):
             </ul>
 
             {severity_html}
-            <p style="margin-top: 1rem;"><strong>{t('kb.affected_crops')}:</strong> {affected_text}</p>
-            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions')}:</strong> {favorable}</p>
+            <p style="margin-top: 1rem;"><strong>{t('kb.affected_crops', crops=affected_text)}</strong></p>
+            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions', conditions=favorable)}</strong></p>
         </div>
     """, unsafe_allow_html=True)
 
