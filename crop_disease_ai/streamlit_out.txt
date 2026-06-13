@@ -1,0 +1,43 @@
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://10.55.164.109:8501
+
++------------------------- Traceback (most recent call last) --------------------------+
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\scriptrunner\exec_code.py:129 in exec_func_with_error_handling                |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\scriptrunner\script_runner.py:687 in code_to_exec                             |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\scriptrunner\script_runner.py:166 in _mpa_v1                                  |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\n |
+| avigation\page.py:486 in run                                                         |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\pages_manager.py:160 in get_page_script_byte_code                             |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\scriptrunner\script_cache.py:72 in get_bytecode                               |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\site-packages\streamlit\r |
+| untime\scriptrunner\magic.py:45 in add_magic                                         |
+|                                                                                      |
+| C:\Users\yeshw\AppData\Local\Programs\Python\Python313\Lib\ast.py:50 in parse        |
+|                                                                                      |
+|     47             raise ValueError(f"Unsupported major version: {major}")           |
+|     48         feature_version = minor                                               |
+|     49     # Else it should be an int giving the minor version for 3.x.              |
+| >   50     return compile(source, filename, mode, flags,                             |
+|     51                    _feature_version=feature_version, optimize=optimize)       |
+|     52                                                                               |
+|     53                                                                               |
++--------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------+
+|  C:\Users\yeshw\OneDrive\Desktop\ai-driven-crop-disease-prediction-and-management-sy |
+| stem\crop_disease_ai\pages\2_Detection.py:409                                        |
+|             <div class="info-box {'orange' if recs.get('urgency','').startswith('Med |
+|                  
