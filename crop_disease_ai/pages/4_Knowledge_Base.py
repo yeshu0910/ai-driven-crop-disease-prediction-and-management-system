@@ -6,10 +6,9 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
 
-st.set_page_config(page_title=t("app.title") + " - " + t("nav.knowledge_base"), page_icon="📖", layout="wide")
 from utils.translator import init_i18n, t
 
-st.set_page_config(page_title="Knowledge Base - Crop Disease AI", page_icon="📖", layout="wide")
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.knowledge_base"), page_icon="📖", layout="wide")
 
 
 def load_css():
@@ -30,8 +29,6 @@ def render_header():
         <div class="main-header">
             <h1>{t("kb.title")}</h1>
             <p>{t("kb.subtitle")}</p>
-            <h1>{t('kb.title')}</h1>
-            <p>{t('kb.subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -123,7 +120,6 @@ def main():
     kb = get_knowledge_base()
     search_query, crop_filter = render_search_and_filter(kb)
 
-    if crop_filter != t("kb.all_crops"):
     if crop_filter != t("kb.filter_all"):
         diseases = kb.filter_by_crop(crop_filter)
     elif search_query:

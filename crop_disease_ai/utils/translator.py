@@ -1,7 +1,19 @@
 import json
 import os
+import re
 from pathlib import Path
 from threading import Lock
+
+_float_re = re.compile(r'(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})')
+
+
+def _decimal_format(value, fmt):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return format(number, fmt)
+
 
 _i18n_dir = Path(__file__).resolve().parent.parent / "i18n"
 _translations = {}
@@ -64,44 +76,43 @@ def t(key, **kwargs):
             value = key
 
     if kwargs and isinstance(value, str):
+        def replace_match(m):
+            key = m.group(1)
+            if key in kwargs:
+                return _decimal_format(kwargs[key], m.group(2))
+            return m.group(0)
+        processed = _float_re.sub(replace_match, value)
         try:
-            return value.format(**kwargs)
-        except KeyError:
-            return value
+            return processed.format(**kwargs)
+        except (KeyError, ValueError):
+            return processed
 
     return value
 
 
 def translate_content_list(items, key_prefix):
     return [t(f"{key_prefix}.{item}") for item in items]
-from pathlib import Path
-from typing import Any
 
-_i18n_cache: dict[str, dict[str, Any]] = {}
+
+def available_languages():
+    file_paths = list(_i18n_dir.glob("*.json"))
+    langs = []
+    for f in sorted(file_paths):
+        code = f.stem
+        names = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
+        langs.append({"code": code, "name": names.get(code, code)})
+    return langs
 
 
 def _load_translations(lang):
-    if lang in _i18n_cache:
-        return _i18n_cache[lang]
-
-    i18n_dir = Path(__file__).resolve().parent.parent / "i18n"
-    file_path = i18n_dir / f"{lang}.json"
-
+    if lang in _supported_languages:
+        lang = lang if lang in _supported_languages else "en"
+    file_path = _i18n_dir / f"{lang}.json"
     if not file_path.exists():
-        file_path = i18n_dir / "en.json"
+        file_path = _i18n_dir / "en.json"
         lang = "en"
-
     with open(file_path, encoding="utf-8") as f:
-        translations = json.load(f)
-
-    _i18n_cache[lang] = translations
-    return translations
-
-
-def _load_en():
-    if "en" not in _i18n_cache:
-        _i18n_cache["en"] = _load_translations("en")
-    return _i18n_cache["en"]
+        return json.load(f)
 
 
 def init_i18n(lang="en"):
@@ -112,27 +123,3 @@ def init_i18n(lang="en"):
         st.session_state["translations"] = _load_translations(lang)
         st.session_state["language"] = lang
 
-
-def t(key, **kwargs):
-    import streamlit as st
-    translations = st.session_state.get("translations")
-    if translations is None:
-        translations = _load_translations("en")
-    value = translations.get(key)
-    if value is None:
-        en = _load_en()
-        value = en.get(key, key)
-    if kwargs:
-        value = value.format(**kwargs)
-    return value
-
-
-def available_languages():
-    i18n_dir = Path(__file__).resolve().parent.parent / "i18n"
-    files = list(i18n_dir.glob("*.json"))
-    langs = []
-    for f in sorted(files):
-        code = f.stem
-        names = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
-        langs.append({"code": code, "name": names.get(code, code)})
-    return langs

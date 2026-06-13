@@ -89,7 +89,7 @@ def render_supported_crops():
 
     st.markdown(f"<h2 style='margin: 2rem 0 1.5rem; font-weight: 700;'>{t('home.supported_crops')}</h2>", unsafe_allow_html=True)
     cols = st.columns(5)
-    for i, (crop, emoji) in enumerate(crops_list):
+    for i, (crop, emoji) in enumerate(crops):
         with cols[i % 5]:
             st.markdown(f"""
                 <div style="text-align: center; padding: 0.8rem; margin-bottom: 0.5rem;
@@ -135,7 +135,6 @@ def render_quick_stats_chart():
                           marker_color="#ff6f00", text=diseased_vals, textposition="auto"))
     fig.update_layout(
         barmode="group",
-        title=t("home.monthly_trends"),
         title=t("home.chart_monthly_trends"),
         template="plotly_white",
         hovermode="x",

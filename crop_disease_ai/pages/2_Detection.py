@@ -10,10 +10,9 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils.translator import t
 
-st.set_page_config(page_title=t("app.title") + " - " + t("nav.detection"), page_icon="🔬", layout="wide")
 from utils.translator import init_i18n, t
 
-st.set_page_config(page_title="Disease Detection - Crop Disease AI", page_icon="🔬", layout="wide")
+st.set_page_config(page_title=t("app.title") + " - " + t("nav.detection"), page_icon="🔬", layout="wide")
 
 
 def load_css():
@@ -50,8 +49,6 @@ def render_header():
         <div class="main-header">
             <h1>{t("detection.title")}</h1>
             <p>{t("detection.subtitle")}</p>
-            <h1>{t('detection.title')}</h1>
-            <p>{t('detection.subtitle')}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -190,11 +187,7 @@ def render_prediction_results(result, image_np, models):
         st.warning(t("detection.low_confidence_warning").format(confidence=confidence*100))
         st.warning(t("detection.low_confidence_warning", confidence=f"{confidence*100:.1f}"))
 
-    tabs = st.tabs(["📊 Analysis", "🔬 Heatmap", "🧠 Grad-CAM", "💊 Treatment", "🤖 AI Explanation", "📄 Report"])
-
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [t("detection.tab_analysis"), t("detection.tab_heatmap"), t("detection.tab_treatment"),
-         t("detection.tab_xai"), t("detection.tab_report")]
         [t("detection.tab_analysis"), t("detection.tab_heatmap"), t("detection.tab_treatment"), t("detection.tab_explanation"), t("detection.tab_report")]
     )
 
@@ -216,13 +209,6 @@ def render_prediction_results(result, image_np, models):
 
             st.markdown(f"""
                 <div class="info-box {'green' if is_healthy else 'orange' if severity_result['severity']=='Mild' else 'red'}">
-                    <strong>{t("detection.risk_level")}</strong> {t("severity.risk_" + severity_result['risk_level'].lower())}<br>
-                    <strong>{t("detection.yield_impact").format(pct=yield_impact)}</strong><br>
-                    <strong>{t("detection.treatment_urgency").format(urgency=t("severity.urgency_" + severity_result['severity'].lower()))}</strong>
-                </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown(f"**{t('detection.spread_estimation').format(estimation=t('severity.spread_' + severity_result['severity'].lower()))}**")
                     <strong>{t('detection.risk_level', level=severity_result['risk_level'])}</strong><br>
                     <strong>{t('detection.yield_impact', pct=yield_impact)}</strong><br>
                     <strong>{t('detection.treatment_urgency', urgency=severity_analyzer.get_treatment_urgency(severity_result['severity']))}</strong>
@@ -235,9 +221,8 @@ def render_prediction_results(result, image_np, models):
             if crop_confidence > 0:
                 st.markdown(f"""
                     <div style="margin: 0.5rem 0; padding: 0.5rem; background: #e8f5e9; border-radius: 8px;">
-                        <strong>{t("detection.identified_crop").format(crop=crop_name, conf=crop_conf_pct)}</strong>
-                        <strong>{t('detection.identified_crop', crop=crop_name)}</strong>
-                        {t('detection.identified_confidence', pct=f'{crop_confidence:.0f}')}
+                        {t('detection.identified_crop', crop=crop_name)}
+                        {t('detection.identified_confidence', pct=f'{crop_confidence*100:.1f}')}
                     </div>
                 """, unsafe_allow_html=True)
 
@@ -321,7 +306,7 @@ def render_prediction_results(result, image_np, models):
                 </div>
             """, unsafe_allow_html=True)
 
-    with tabs[1]:
+    with tab2:
         col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown(f"<h4 style='text-align: center;'>{t('detection.original_image')}</h4>", unsafe_allow_html=True)
@@ -348,7 +333,7 @@ def render_prediction_results(result, image_np, models):
             </div>
         """, unsafe_allow_html=True)
 
-    with tabs[2]:
+    with tab3:
         st.markdown("<h4 style='margin-bottom:0.75rem;'>🧠 Grad-CAM Attention Map</h4>", unsafe_allow_html=True)
         st.markdown("<p style='color:var(--text-secondary);font-size:0.85rem;'>Shows which regions of the image influenced the model's decision most.</p>", unsafe_allow_html=True)
         try:
@@ -387,7 +372,7 @@ def render_prediction_results(result, image_np, models):
         except Exception as e:
             st.info(f"Grad-CAM visualization unavailable: {e}")
 
-    with tabs[3]:
+    with tab4:
         recs = recommendations
         cat_icons = {"chemical_treatment": "🧪", "organic_treatment": "🌿",
                      "fertilizer_suggestions": "🧫", "irrigation_guidance": "💧",
@@ -401,16 +386,6 @@ def render_prediction_results(result, image_np, models):
                       "irrigation_guidance": t("treatment.irrigation"),
                       "prevention_measures": t("treatment.prevention"),
                       "crop_management_tips": t("treatment.management")}
-
-        st.markdown(f"""
-            <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
-                <strong>{t('detection.urgency').format(urgency=recs.get('urgency', 'Normal'))}</strong>
-        cat_labels = {"chemical_treatment": t("detection.treatment_chemical"),
-                      "organic_treatment": t("detection.treatment_organic"),
-                      "fertilizer_suggestions": t("detection.treatment_fertilizer"),
-                      "irrigation_guidance": t("detection.treatment_irrigation"),
-                      "prevention_measures": t("detection.treatment_prevention"),
-                      "crop_management_tips": t("detection.treatment_management")}
 
         st.markdown(f"""
             <div class="info-box {'orange' if recs.get('urgency','').startswith('Medium') or recs.get('urgency','').startswith('High') else 'green'}">
@@ -469,7 +444,6 @@ def render_prediction_results(result, image_np, models):
             farm_location = st.text_input(t("detection.farm_location"), value=st.session_state.get("farm_location", ""))
 
         if st.button(t("detection.btn_generate_pdf"), type="primary", width='stretch'):
-            with st.spinner(t("detection.spinner_pdf")):
             with st.spinner(t("detection.generating_pdf")):
                 try:
                     from utils.pdf_generator import PDFGenerator
@@ -530,9 +504,6 @@ def render_prediction_results(result, image_np, models):
                 st.success(t("detection.db_success").format(id=pred_id))
             except Exception as e:
                 st.error(t("detection.db_error").format(error=str(e)))
-                st.success(t("detection.saved_to_db", id=pred_id))
-            except Exception as e:
-                st.error(t("detection.error_save", error=str(e)))
 
 
 def main():
@@ -554,11 +525,6 @@ def main():
         """, unsafe_allow_html=True)
 
         input_method = st.radio(t("detection.input_method"), [t("detection.upload_image"), t("detection.capture_camera")], horizontal=True)
-                <h3 style="margin-bottom: 1rem;">{t('detection.upload_section')}</h3>
-            </div>
-        """, unsafe_allow_html=True)
-
-        input_method = st.radio(t("detection.input_method"), [t("detection.upload_option"), t("detection.camera_option")], horizontal=True)
 
         image_np = None
         uploaded_file = None
@@ -566,9 +532,6 @@ def main():
         if input_method == t("detection.upload_image"):
             uploaded_file = st.file_uploader(
                 t("detection.choose_file"),
-        if input_method == t("detection.upload_option"):
-            uploaded_file = st.file_uploader(
-                t("detection.file_uploader"),
                 type=["jpg", "jpeg", "png", "webp", "tiff"],
                 label_visibility="collapsed",
             )
@@ -586,11 +549,9 @@ def main():
                         image_np = None
         else:
             img_file = st.camera_input(t("detection.capture_leaf"))
-            img_file = st.camera_input(t("detection.camera_label"))
             if img_file:
                 try:
-                    from utils.image_processor import ImageProcessor
-                    processor = ImageProcessor()
+                    processor = models["processor"]
                     image_bytes = img_file.getvalue()
                     image_np = processor.load_image_from_bytes(image_bytes)
                 except Exception as e:
@@ -598,7 +559,6 @@ def main():
 
         if image_np is not None:
             st.image(image_np, caption=t("detection.uploaded_image"), width='stretch')
-            st.image(image_np, caption=t("detection.uploaded_caption"), width='stretch')
 
     with col2:
         st.markdown(f"""
@@ -662,7 +622,6 @@ def main():
             st.markdown("<br>", unsafe_allow_html=True)
 
             if st.button(t("detection.btn_detect"), type="primary", width='stretch'):
-                with st.spinner(t("detection.analysis_spinner")):
                 with st.spinner(t("detection.analyzing")):
                     try:
                         result = models["model"].predict(prepared, crop_hint=crop_hint)
@@ -679,16 +638,6 @@ def main():
 
     if image_np is not None and "last_result" not in st.session_state:
         st.info(t("detection.hint_detect"))
-                            st.error(t("detection.error_model"))
-                    except Exception as e:
-                        st.error(t("detection.error_detection", error=str(e)))
-                        import traceback
-                        st.error(traceback.format_exc())
-        else:
-            st.info(t("detection.waiting_upload"))
-
-    if image_np is not None and "last_result" not in st.session_state:
-        st.info(t("detection.waiting_click"))
 
 
 if __name__ == "__main__":
