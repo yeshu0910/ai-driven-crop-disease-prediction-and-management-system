@@ -13,7 +13,7 @@ def load_css():
     css_path = Path(__file__).resolve().parent.parent / "assets" / "style.css"
     if css_path.exists():
         with open(str(css_path)) as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+            st.markdown("<style>{}</style>".format(f.read()), unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -23,12 +23,7 @@ def get_knowledge_base():
 
 
 def render_header():
-    st.markdown(f"""
-        <div class="main-header">
-            <h1>{t("kb.title")}</h1>
-            <p>{t("kb.subtitle")}</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="main-header"><h1>{}</h1><p>{}</p></div>'.format(t("kb.title"), t("kb.subtitle")), unsafe_allow_html=True)
 
 
 def render_search_and_filter(kb):
@@ -48,59 +43,25 @@ def render_disease_card(disease_name, info):
     severity = info.get("severity_indicators", {})
     severity_html = ""
     if severity:
-        severity_html = f"<h4 style='margin-top: 1rem;'>{t('kb.severity_indicators')}</h4>"
+        severity_html = '<h4 style="margin-top: 1rem;">{}</h4>'.format(t("kb.severity_indicators"))
         for level, desc in severity.items():
             color = {"Mild": "#f1c40f", "Moderate": "#e67e22", "Severe": "#e74c3c"}.get(level, "#333")
-            level_label = t("severity." + level.lower()) if level.lower() in ["healthy", "mild", "moderate", "severe"] else level
-            severity_html += f"""
-                <div style="display:flex;align-items:center;margin:0.25rem 0;font-size:0.85rem;">
-                    <span style="background:{color};color:white;padding:0.1rem 0.5rem;
-                         border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.5rem;flex-shrink:0;">
-                        {level}
-                    </span>
-                    <span style="color:var(--text-secondary);">{desc}</span>
-                </div>
-            """
+            severity_html += '<div style="display:flex;align-items:center;margin:0.25rem 0;font-size:0.85rem;"><span style="background:{};color:white;padding:0.1rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.5rem;flex-shrink:0;">{}</span><span style="color:#A1A1AA;">{}</span></div>'.format(color, level, desc)
 
     affected = info.get("affected_crops", [])
     affected_text = ", ".join(affected) if affected else t("common.na")
 
     favorable = info.get("favorable_conditions", "N/A")
+    description = info.get("description", t("kb.no_description"))
+    symptoms_list = "".join('<li style="margin: 0.3rem 0;">{}</li>'.format(s) for s in info.get("symptoms", []))
+    causes_list = "".join('<li style="margin: 0.3rem 0;">{}</li>'.format(c) for c in info.get("causes", []))
+    prevention_list = "".join('<li style="margin: 0.3rem 0;">{}</li>'.format(p) for p in info.get("prevention", []))
+    treatment_list = "".join('<li style="margin: 0.3rem 0;">{}</li>'.format(tr) for tr in info.get("treatment", []))
 
-    st.markdown(f"""
-        <div class="card" style="margin-bottom:1rem;padding:1.5rem;">
-            <h3 class="gradient-text-primary" style="font-weight:700;margin-bottom:0.5rem;font-size:1.1rem;">
-                {disease_name}
-            </h3>
-            <p style="color: #555; margin-bottom: 1rem; line-height: 1.6;">
-                {info.get('description', t('kb.no_description'))}
-            </p>
-
-            <h4>{t('kb.symptoms')}</h4>
-            <ul>
-                {''.join(f'<li style="margin: 0.3rem 0;">{s}</li>' for s in info.get('symptoms', []))}
-            </ul>
-
-            <h4 style="margin-top: 1rem;">{t('kb.causes')}</h4>
-            <ul>
-                {''.join(f'<li style="margin: 0.3rem 0;">{c}</li>' for c in info.get('causes', []))}
-            </ul>
-
-            <h4 style="margin-top: 1rem;">{t('kb.prevention')}</h4>
-            <ul>
-                {''.join(f'<li style="margin: 0.3rem 0;">{p}</li>' for p in info.get('prevention', []))}
-            </ul>
-
-            <h4 style="margin-top: 1rem;">{t('kb.treatment')}</h4>
-            <ul>
-                {''.join(f'<li style="margin: 0.3rem 0;">{tr}</li>' for tr in info.get('treatment', []))}
-            </ul>
-
-            {severity_html}
-            <p style="margin-top: 1rem;"><strong>{t('kb.affected_crops', crops=affected_text)}</strong></p>
-            <p style="margin-top: 0.5rem;"><strong>{t('kb.favorable_conditions', conditions=favorable)}</strong></p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        '<div class="card" style="margin-bottom:1rem;padding:1.5rem;"><h3 class="gradient-text-primary" style="font-weight:700;margin-bottom:0.5rem;font-size:1.1rem;">' + disease_name + '</h3><p style="color: #A1A1AA; margin-bottom: 1rem; line-height: 1.6;">' + description + '</p><h4 style="margin-top: 1rem;">' + t("kb.symptoms") + '</h4><ul>' + symptoms_list + '</ul><h4 style="margin-top: 1rem;">' + t("kb.causes") + '</h4><ul>' + causes_list + '</ul><h4 style="margin-top: 1rem;">' + t("kb.prevention") + '</h4><ul>' + prevention_list + '</ul><h4 style="margin-top: 1rem;">' + t("kb.treatment") + '</h4><ul>' + treatment_list + '</ul>' + severity_html + '<p style="margin-top: 1rem;"><strong>' + t("kb.affected_crops", crops=affected_text) + '</strong></p><p style="margin-top: 0.5rem;"><strong>' + t("kb.favorable_conditions", conditions=favorable) + '</strong></p></div>',
+        unsafe_allow_html=True
+    )
 
 
 def main():
@@ -113,14 +74,14 @@ def main():
     kb = get_knowledge_base()
     search_query, crop_filter = render_search_and_filter(kb)
 
-    if crop_filter != t("kb.filter_all"):
+    if crop_filter != t("kb.all_crops"):
         diseases = kb.filter_by_crop(crop_filter)
     elif search_query:
         diseases = kb.search(search_query)
     else:
         diseases = kb.get_all_diseases()
 
-    st.markdown(f"<p style='color:#888;margin-bottom:1rem;'>{t('kb.showing_records', count=len(diseases))}</p>", unsafe_allow_html=True)
+    st.markdown('<p style="color:#888;margin-bottom:1rem;">{}</p>'.format(t('kb.showing_records', count=len(diseases))), unsafe_allow_html=True)
 
     for disease_name in diseases:
         info = kb.get_disease_info(disease_name)
