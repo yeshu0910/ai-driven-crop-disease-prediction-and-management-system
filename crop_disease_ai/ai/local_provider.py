@@ -38,7 +38,10 @@ class OllamaLocalProvider:
         image_paths: Sequence[str] | None = None,
     ) -> str:
         if image_paths:
-            raise OllamaProviderError("Ollama /api/generate does not accept image_paths; use a vision model through /api/chat in a future provider.")
+            raise OllamaProviderError(
+                "Ollama's /api/generate endpoint does not support image input. "
+                "Use a vision model (e.g., llava) with /api/chat or switch to a cloud provider for image analysis."
+            )
 
         payload = {
             "model": config.model,
