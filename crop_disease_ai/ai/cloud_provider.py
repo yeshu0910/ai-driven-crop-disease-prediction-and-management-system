@@ -45,7 +45,10 @@ class CloudProvider:
     ) -> str:
         provider = coerce_provider(config.provider)
         if image_paths:
-            raise CloudProviderError("Image input is not supported by the current text provider interface.")
+            raise CloudProviderError(
+                f"Image input is not currently supported for {provider.value}. "
+                "Please use text-based queries in the AI Assistant for now."
+            )
 
         if provider == AIProvider.ANTHROPIC:
             payload, url, headers = self._anthropic_payload(prompt, config, system_prompt)
