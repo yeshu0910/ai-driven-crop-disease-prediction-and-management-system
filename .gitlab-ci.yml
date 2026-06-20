@@ -1,10 +1,7 @@
 stages:
-  - lint
-  - format
-  - typecheck
+  - static_analysis  # Combines linting, formatting, and typechecking
   - security
   - test
-  - coverage
   - build
   - deploy
 
@@ -13,71 +10,72 @@ variables:
   RUFF_CACHE_DIR: "$CI_PROJECT_DIR/.cache/ruff"
   PYTHON_VERSION: "3.11"
 
-before_script:
-  - python --version
-  - pip install -U pip setuptools wheel
-
-lint:
-  stage: lint
-  image: python:$PYTHON_VERSION
+# Reusable cache definition to keep things DRY
+.python_cache: &python_cache
   cache:
+    key:
+      files:
+        - pyproject.toml
     paths:
       - .cache/pip
       - .cache/ruff
+
+# Reusable template for python jobs that actually need pip upgrades
+.python_setup: &python_setup
+  image: python:$PYTHON_VERSION
+  <<: *python_cache
+  before_script:
+    - python --version
+    - pip install -U pip setuptools wheel
+
+# Global rule mapping to prevent code duplication across jobs
+.workflow_rules: &workflow_rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ----------------------------------------
+# STATIC ANALYSIS STAGE
+# ----------------------------------------
+
+lint_and_format:
+  <<: *python_setup
+  stage: static_analysis
   script:
     - pip install ruff
     - ruff check --output-format=gitlab .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-
-format:
-  stage: format
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
-      - .cache/ruff
-  script:
-    - pip install ruff
     - ruff format --check .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
 
 typecheck:
-  stage: typecheck
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
+  <<: *python_setup
+  stage: static_analysis
   script:
     - pip install mypy
     - pip install -e .
     - mypy .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
+
+# ----------------------------------------
+# SECURITY STAGE
+# ----------------------------------------
 
 security_secrets:
   stage: security
   image: zricethezav/gitleaks:latest
+  # Explicitly overriding global behaviors because gitleaks doesn't use python
+  before_script: [] 
   script:
     - gitleaks detect --source . --report-path gitleaks-report.json --report-format json
   artifacts:
     paths:
       - gitleaks-report.json
     expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
 
 security_bandit:
+  <<: *python_setup
   stage: security
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
   script:
     - pip install bandit
     - bandit -r src/ -f json -o bandit-report.json || true
@@ -86,46 +84,23 @@ security_bandit:
     paths:
       - bandit-report.json
     expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
 
 security_dependency:
+  <<: *python_setup
   stage: security
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
   script:
     - pip install pip-audit
     - pip-audit --requirement pyproject.toml || true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
 
-test:
+# ----------------------------------------
+# TEST STAGE (Unified Tests & Coverage)
+# ----------------------------------------
+
+test_and_coverage:
+  <<: *python_setup
   stage: test
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
-  script:
-    - pip install -e ".[dev]"
-    - pytest --cov=. --cov-report=term --cov-report=xml
-  artifacts:
-    paths:
-      - coverage.xml
-    expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-
-coverage:
-  stage: coverage
-  image: python:$PYTHON_VERSION
-  cache:
-    paths:
-      - .cache/pip
   script:
     - pip install -e ".[dev]"
     - pytest --cov=. --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=80
@@ -134,9 +109,11 @@ coverage:
       - coverage.xml
       - htmlcov/
     expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
+
+# ----------------------------------------
+# BUILD STAGE
+# ----------------------------------------
 
 build_docker:
   stage: build
@@ -152,13 +129,16 @@ build_docker:
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
     - docker push $CI_REGISTRY_IMAGE:latest
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+  <<: *workflow_rules
+
+# ----------------------------------------
+# DEPLOY STAGE
+# ----------------------------------------
 
 deploy_staging:
   stage: deploy
   image: alpine:latest
+  before_script: []
   environment:
     name: staging
     url: $STAGING_URL
@@ -172,6 +152,7 @@ deploy_staging:
 deploy_production:
   stage: deploy
   image: alpine:latest
+  before_script: []
   environment:
     name: production
     url: $PRODUCTION_URL
