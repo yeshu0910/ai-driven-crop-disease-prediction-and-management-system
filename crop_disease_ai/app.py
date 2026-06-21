@@ -18,7 +18,7 @@ st.set_page_config(
 def load_css():
     css_path = Path(__file__).resolve().parent / "assets" / "style.css"
     if css_path.exists():
-        with open(str(css_path)) as f:
+        with open(css_path, encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
@@ -45,8 +45,6 @@ def init_session_state():
         from database.db_manager import DatabaseManager
         DatabaseManager()
         st.session_state["db_initialized"] = True
-    if "language" not in st.session_state:
-        st.session_state["language"] = "en"
 
 
 def render_sidebar():
@@ -54,20 +52,11 @@ def render_sidebar():
         st.markdown(f"""
             <div class="sidebar-header">
                 <h3>{t("sidebar.header_title")}</h3>
-                <p style="font-size: 0.8rem; opacity: 0.8;">{t("sidebar.header_subtitle")}</p>
+                <p style="font-size: 0.8rem; opacity: 0.8;">
+                    {t("sidebar.header_subtitle")}
+                </p>
             </div>
         """, unsafe_allow_html=True)
-
-        st.markdown(f"### {t('nav.navigation')}")
-        pages = {
-            t("nav.home"): "1_Home.py",
-            t("nav.detection"): "2_Detection.py",
-            t("nav.analytics"): "3_Analytics.py",
-            t("nav.knowledge_base"): "4_Knowledge_Base.py",
-            t("nav.weather"): "5_Weather.py",
-            t("nav.history"): "6_History.py",
-            t("nav.about"): "7_About.py"
-        }
 
         pages = [
             ("🏠", "Home", "1_Home.py"),
@@ -83,41 +72,68 @@ def render_sidebar():
         for icon, label, page_file in pages:
             is_active = current == page_file
             btn_type = "primary" if is_active else "secondary"
-            if st.button(f"{icon} {label}", key=f"nav_{page_file}",
-                         type=btn_type, width='stretch'):
+
+            if st.button(
+                f"{icon} {label}",
+                key=f"nav_{page_file}",
+                type=btn_type,
+                use_container_width=True,
+            ):
                 st.session_state["current_page"] = page_file
                 st.switch_page(f"pages/{page_file}")
 
         st.markdown("---")
         st.markdown(f"### {t('sidebar.farmer_profile')}")
+
         st.session_state["farmer_name"] = st.text_input(
-            t("sidebar.name"), value=st.session_state.get("farmer_name", ""),
+            t("sidebar.name"),
+            value=st.session_state.get("farmer_name", ""),
             placeholder=t("sidebar.name_placeholder")
         )
+
         st.session_state["farm_location"] = st.text_input(
-            t("sidebar.location"), value=st.session_state.get("farm_location", ""),
+            t("sidebar.location"),
+            value=st.session_state.get("farm_location", ""),
             placeholder=t("sidebar.location_placeholder")
         )
 
         st.markdown("---")
         st.markdown(f"### {t('sidebar.settings')}")
+
         theme_options = [t("sidebar.light"), t("sidebar.dark")]
         theme = st.selectbox(
             t("sidebar.theme"),
             theme_options,
             index=0 if st.session_state.get("theme") == "light" else 1
         )
-        st.session_state["theme"] = "light" if theme == t("sidebar.light") else "dark"
+
+        st.session_state["theme"] = (
+            "light" if theme == t("sidebar.light") else "dark"
+        )
 
         langs = get_supported_languages()
-        lang_labels = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
-        lang_options = [f"{lang_labels.get(l, l.upper())}" for l in langs]
+        lang_labels = {
+            "en": "English",
+            "hi": "हिन्दी",
+            "te": "తెలుగు"
+        }
+
+        lang_options = [
+            lang_labels.get(lang, lang.upper())
+            for lang in langs
+        ]
+
         current_lang = st.session_state.get("language", "en")
         lang_idx = langs.index(current_lang) if current_lang in langs else 0
+
         selected_lang = st.selectbox(
-            t("app.language"), lang_options, index=lang_idx
+            t("app.language"),
+            lang_options,
+            index=lang_idx
         )
+
         new_lang = langs[lang_options.index(selected_lang)]
+
         if new_lang != current_lang:
             st.session_state["language"] = new_lang
             load_translations(new_lang)
@@ -125,13 +141,11 @@ def render_sidebar():
 
         st.markdown("---")
         st.markdown(f"""
-            <div style="text-align: center; padding: 1rem 0; font-size: 0.8rem; color: #888;">
+            <div style="text-align:center; padding:1rem 0; font-size:0.8rem; color:#888;">
                 <p>{t("app.footer_title")}</p>
                 <p>{t("app.version")}</p>
             </div>
         """, unsafe_allow_html=True)
-
-
 def render_main():
     st.markdown(f"""
         <div class="main-header">
@@ -234,7 +248,5 @@ def main():
     load_translations(lang)
     render_sidebar()
     render_main()
-
-
 if __name__ == "__main__":
     main()
