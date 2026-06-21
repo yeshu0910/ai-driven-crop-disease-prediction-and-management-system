@@ -8,8 +8,6 @@ import streamlit as st
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils.translator import t
-
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.detection"), page_icon="🔬", layout="wide")
@@ -377,9 +375,6 @@ def render_prediction_results(result, image_np, models):
         cat_icons = {"chemical_treatment": "🧪", "organic_treatment": "🌿",
                      "fertilizer_suggestions": "🧫", "irrigation_guidance": "💧",
                      "prevention_measures": "🛡️", "crop_management_tips": "📋"}
-        cat_keys_map = {"chemical_treatment": "chemical", "organic_treatment": "organic",
-                        "fertilizer_suggestions": "fertilizer", "irrigation_guidance": "irrigation",
-                        "prevention_measures": "prevention", "crop_management_tips": "management"}
         cat_labels = {"chemical_treatment": t("treatment.chemical"),
                       "organic_treatment": t("treatment.organic"),
                       "fertilizer_suggestions": t("treatment.fertilizer"),
