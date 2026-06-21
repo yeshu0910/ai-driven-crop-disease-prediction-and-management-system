@@ -28,7 +28,7 @@ cache:
     - pip install -U pip
     - pip install -e .
 
-workflow_rules: &workflow_rules
+.workflow_rules: &workflow_rules
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -76,4 +76,6 @@ deploy_staging:
   image: alpine
   script:
     - echo "Deploy staging"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   when: manual
