@@ -4,10 +4,10 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-_float_re = re.compile(r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})")
+_float_re: re.Pattern[str] = re.compile(r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})")
 
 
-def _decimal_format(value, fmt):
+def _decimal_format(value: Any, fmt: str) -> str:
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -67,13 +67,13 @@ def t(key: str, **kwargs) -> Any:
         pass
 
     with _lock:
-        value = _translations.get(key)
+        value: Any = _translations.get(key)
 
     if value is None:
         en_path = _i18n_dir / "en.json"
         try:
             with open(str(en_path), "r", encoding="utf-8") as f:
-                en_translations = json.load(f)
+                en_translations: dict[str, Any] = json.load(f)
             value = en_translations.get(key, key)
         except Exception:
             value = key
@@ -93,7 +93,7 @@ def t(key: str, **kwargs) -> Any:
         except (KeyError, ValueError):
             return processed
 
-    return value
+    return str(value)
 
 
 def translate_content_list(items: list[str], key_prefix: str) -> list[Any]:
@@ -106,7 +106,7 @@ def available_languages() -> list[dict[str, str]]:
 
     for f in sorted(file_paths):
         code = f.stem
-        names = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
+        names: dict[str, str] = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
         langs.append({"code": code, "name": names.get(code, code)})
 
     return langs
