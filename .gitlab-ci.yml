@@ -10,22 +10,22 @@ stages:
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  RUFF_CACHE_DIR: "$CI_PROJECT_DIR/.cache/ruff"
-  PYTHON_VERSION: "3.11"
+  PIP_PREFER_BINARY: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
-before_script:
-  - python --version
-  - pip install -U pip setuptools wheel
+.default_cache: &default_cache
+  key: pip-cache
+  paths:
+    - .cache/pip
+  policy: pull-push
 
 lint:
   stage: lint
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
-      - .cache/ruff
+    <<: *default_cache
   script:
-    - pip install -e ".[dev]"
+    - pip install ruff
     - ruff check --output-format=gitlab .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -33,13 +33,11 @@ lint:
 
 format:
   stage: format
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
-      - .cache/ruff
+    <<: *default_cache
   script:
-    - pip install -e ".[dev]"
+    - pip install ruff
     - ruff format --check .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -47,12 +45,11 @@ format:
 
 typecheck:
   stage: typecheck
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
+    <<: *default_cache
   script:
-    - pip install -e ".[dev]"
+    - pip install mypy
     - mypy .
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -73,12 +70,11 @@ security_secrets:
 
 security_bandit:
   stage: security
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
+    <<: *default_cache
   script:
-    - pip install -e ".[dev]"
+    - pip install bandit
     - bandit -r crop_disease_ai/ -f json -o bandit-report.json -s B101,B110,B311 --exclude tests || true
     - bandit -r crop_disease_ai/ -s B101,B110,B311 --exclude tests
   artifacts:
@@ -91,12 +87,11 @@ security_bandit:
 
 security_dependency:
   stage: security
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
+    <<: *default_cache
   script:
-    - pip install -e ".[dev]"
+    - pip install pip-audit
     - pip-audit --requirement pyproject.toml || true
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -104,12 +99,12 @@ security_dependency:
 
 test:
   stage: test
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
+    <<: *default_cache
+  timeout: 15 minutes
   script:
-    - pip install -e ".[dev]"
+    - pip install -e ".[test]"
     - pytest --cov=. --cov-report=term --cov-report=xml
   artifacts:
     paths:
@@ -121,12 +116,12 @@ test:
 
 coverage:
   stage: coverage
-  image: python:$PYTHON_VERSION
+  image: python:3.11-slim
   cache:
-    paths:
-      - .cache/pip
+    <<: *default_cache
+  timeout: 15 minutes
   script:
-    - pip install -e ".[dev]"
+    - pip install -e ".[test]"
     - pytest --cov=. --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=80
   artifacts:
     paths:
