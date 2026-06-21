@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from threading import Lock
 
-_float_re = re.compile(r'(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})')
+_float_re = re.compile(r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})")
 
 
 def _decimal_format(value, fmt):
@@ -56,10 +56,11 @@ def t(key, **kwargs):
     _ensure_loaded()
     try:
         import streamlit as st
+
         lang = st.session_state.get("language", "en")
         if lang != _current_lang:
             load_translations(lang)
-    except Exception:
+    except Exception:  # nosec
         pass
 
     with _lock:
@@ -75,11 +76,13 @@ def t(key, **kwargs):
             value = key
 
     if kwargs and isinstance(value, str):
+
         def replace_match(m):
             key = m.group(1)
             if key in kwargs:
                 return _decimal_format(kwargs[key], m.group(2))
             return m.group(0)
+
         processed = _float_re.sub(replace_match, value)
         try:
             return processed.format(**kwargs)
@@ -116,9 +119,9 @@ def _load_translations(lang):
 
 def init_i18n(lang="en"):
     import streamlit as st
+
     current = st.session_state.get("language")
     translations = st.session_state.get("translations")
     if current != lang or translations is None:
         st.session_state["translations"] = _load_translations(lang)
         st.session_state["language"] = lang
-

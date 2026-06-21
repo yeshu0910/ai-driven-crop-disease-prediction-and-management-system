@@ -25,12 +25,15 @@ def load_css() -> None:
 
 
 def render_header() -> None:
-    st.markdown("""
+    st.markdown(
+        """
         <div class="main-header">
             <h1>AI Assistant</h1>
             <p>Unified local and BYOK AI tools for crop disease support</p>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def get_session_config() -> ProviderConfig:
@@ -54,7 +57,10 @@ def render_chat() -> None:
     st.subheader("Chatbot")
     if "ai_chat_messages" not in st.session_state:
         st.session_state["ai_chat_messages"] = [
-            {"role": "assistant", "content": "Ask about crop disease diagnosis, treatment, or prevention."}
+            {
+                "role": "assistant",
+                "content": "Ask about crop disease diagnosis, treatment, or prevention.",
+            }
         ]
 
     for message in st.session_state["ai_chat_messages"]:
@@ -69,10 +75,13 @@ def render_chat() -> None:
         with st.chat_message("assistant"), st.spinner("Generating response..."):
             try:
                 history = "\n".join(
-                    f"{item['role']}: {item['content']}" for item in st.session_state["ai_chat_messages"][:-1]
+                    f"{item['role']}: {item['content']}"
+                    for item in st.session_state["ai_chat_messages"][:-1]
                 )
                 response = chat_with_ai(history, get_session_config())
-                st.session_state["ai_chat_messages"].append({"role": "assistant", "content": response})
+                st.session_state["ai_chat_messages"].append(
+                    {"role": "assistant", "content": response}
+                )
                 st.write(response)
             except Exception as exc:
                 st.error(f"AI chat failed: {exc}")
@@ -152,11 +161,21 @@ def render_image_analysis() -> None:
 def render_recommendations() -> None:
     st.subheader("Recommendation engine")
     last_result = st.session_state.get("last_result")
-    crop_name = st.text_input("Crop", value=str(last_result.get("crop_name", "Tomato")) if last_result else "Tomato")
-    disease_name = st.text_input("Disease", value=str(last_result.get("disease_name", "Early Blight")) if last_result else "Early Blight")
+    crop_name = st.text_input(
+        "Crop",
+        value=str(last_result.get("crop_name", "Tomato")) if last_result else "Tomato",
+    )
+    disease_name = st.text_input(
+        "Disease",
+        value=str(last_result.get("disease_name", "Early Blight"))
+        if last_result
+        else "Early Blight",
+    )
     severity = st.selectbox("Severity", ["Mild", "Moderate", "Severe"], index=1)
     infection_percentage = st.slider("Infection percentage", 0.0, 100.0, 25.0)
-    weather = st.text_area("Weather context", value="Humidity 80%, rain expected tomorrow", height=80)
+    weather = st.text_area(
+        "Weather context", value="Humidity 80%, rain expected tomorrow", height=80
+    )
 
     if st.button("Generate AI recommendations"):
         base_recommendations = last_result.get("treatment", {}) if last_result else {}
@@ -211,7 +230,9 @@ def render_report_summary() -> None:
 def main() -> None:
     load_css()
     render_header()
-    st.info("All AI features on this page call the unified provider_manager layer. Select Local (Ollama) or a BYOK provider in the sidebar.")
+    st.info(
+        "All AI features on this page call the unified provider_manager layer. Select Local (Ollama) or a BYOK provider in the sidebar."
+    )
     render_chat()
     st.divider()
     render_summarizer()

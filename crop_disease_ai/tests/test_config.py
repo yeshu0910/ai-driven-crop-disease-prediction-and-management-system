@@ -22,9 +22,23 @@ def test_supported_crops_count():
 
 
 def test_supported_crops_content():
-    expected = {"Tomato", "Potato", "Rice", "Wheat", "Corn", "Cotton",
-                "Soybean", "Sugarcane", "Groundnut", "Sunflower", "Banana",
-                "Mango", "Grapes", "Apple", "Chili"}
+    expected = {
+        "Tomato",
+        "Potato",
+        "Rice",
+        "Wheat",
+        "Corn",
+        "Cotton",
+        "Soybean",
+        "Sugarcane",
+        "Groundnut",
+        "Sunflower",
+        "Banana",
+        "Mango",
+        "Grapes",
+        "Apple",
+        "Chili",
+    }
     assert set(SUPPORTED_CROPS) == expected
 
 

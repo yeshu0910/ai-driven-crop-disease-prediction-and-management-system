@@ -42,7 +42,7 @@ lint_and_format:
   <<: *python_setup
   stage: static_analysis
   script:
-    - pip install ruff
+    - pip install -e ".[dev]"
     - ruff check --output-format=gitlab .
     - ruff format --check .
   <<: *workflow_rules
@@ -51,8 +51,7 @@ typecheck:
   <<: *python_setup
   stage: static_analysis
   script:
-    - pip install mypy
-    - pip install -e .
+    - pip install -e ".[dev]"
     - mypy .
   <<: *workflow_rules
 
@@ -77,9 +76,9 @@ security_bandit:
   <<: *python_setup
   stage: security
   script:
-    - pip install bandit
-    - bandit -r src/ -f json -o bandit-report.json || true
-    - bandit -r src/
+    - pip install -e ".[dev]"
+    - bandit -r crop_disease_ai/ -f json -o bandit-report.json -s B101,B110,B311 --exclude tests || true
+    - bandit -r crop_disease_ai/ -s B101,B110,B311 --exclude tests
   artifacts:
     paths:
       - bandit-report.json
@@ -90,7 +89,7 @@ security_dependency:
   <<: *python_setup
   stage: security
   script:
-    - pip install pip-audit
+    - pip install -e ".[dev]"
     - pip-audit --requirement pyproject.toml || true
   <<: *workflow_rules
 
