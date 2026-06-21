@@ -36,8 +36,12 @@ class ProviderManager:
         cloud_provider: TextGenerator | None = None,
         cache_ttl_seconds: int = 3600,
     ) -> None:
-        local: TextGenerator = OllamaLocalProvider() if local_provider is None else local_provider
-        cloud: TextGenerator = CloudProvider() if cloud_provider is None else cloud_provider
+        local: TextGenerator = (
+            OllamaLocalProvider() if local_provider is None else local_provider
+        )
+        cloud: TextGenerator = (
+            CloudProvider() if cloud_provider is None else cloud_provider
+        )
 
         self.router = ModelRouter(
             local_provider=local,
@@ -91,7 +95,9 @@ class ProviderManager:
             )
         except Exception as exc:
             if self._should_fallback(config, fallback, selected_provider):
-                logger.warning("Primary AI provider failed; falling back to local Ollama.")
+                logger.warning(
+                    "Primary AI provider failed; falling back to local Ollama."
+                )
                 local_config = self._local_config(config)
                 provider_name = AIProvider.OLLAMA.value
                 response_metadata = dict(local_config.metadata)
@@ -102,7 +108,9 @@ class ProviderManager:
                     image_paths=image_paths,
                 )
             else:
-                raise AIProviderError(f"AI provider {selected_provider.value} failed.") from exc
+                raise AIProviderError(
+                    f"AI provider {selected_provider.value} failed."
+                ) from exc
 
         latency_ms = (time.perf_counter() - started_at) * 1000
         response = AIResponse(
@@ -158,7 +166,9 @@ class ProviderManager:
             )
         except Exception as exc:
             if self._should_fallback(config, fallback, selected_provider):
-                logger.warning("Primary async AI provider failed; falling back to local Ollama.")
+                logger.warning(
+                    "Primary async AI provider failed; falling back to local Ollama."
+                )
                 local_config = self._local_config(config)
                 provider_name = AIProvider.OLLAMA.value
                 response_metadata = dict(local_config.metadata)
@@ -169,7 +179,9 @@ class ProviderManager:
                     image_paths=image_paths,
                 )
             else:
-                raise AIProviderError(f"Async AI provider {selected_provider.value} failed.") from exc
+                raise AIProviderError(
+                    f"Async AI provider {selected_provider.value} failed."
+                ) from exc
 
         latency_ms = (time.perf_counter() - started_at) * 1000
         response = AIResponse(
@@ -213,8 +225,12 @@ class ProviderManager:
                     )
                 return
         except Exception as exc:
-            if self._should_fallback(config, fallback, coerce_provider(config.provider)):
-                logger.warning("Streaming AI provider failed; falling back to local Ollama.")
+            if self._should_fallback(
+                config, fallback, coerce_provider(config.provider)
+            ):
+                logger.warning(
+                    "Streaming AI provider failed; falling back to local Ollama."
+                )
                 local_config = self._local_config(config)
                 for chunk in self.router.local_provider.generate_stream(
                     prompt,
@@ -231,7 +247,9 @@ class ProviderManager:
                         metadata=dict(config.metadata),
                     )
                 return
-            raise AIProviderError(f"Streaming AI provider {coerce_provider(config.provider).value} failed.") from exc
+            raise AIProviderError(
+                f"Streaming AI provider {coerce_provider(config.provider).value} failed."
+            ) from exc
 
         response = self.generate_response(
             prompt,
@@ -272,8 +290,12 @@ class ProviderManager:
                     )
                 return
         except Exception as exc:
-            if self._should_fallback(config, fallback, coerce_provider(config.provider)):
-                logger.warning("Async streaming AI provider failed; falling back to local Ollama.")
+            if self._should_fallback(
+                config, fallback, coerce_provider(config.provider)
+            ):
+                logger.warning(
+                    "Async streaming AI provider failed; falling back to local Ollama."
+                )
                 local_config = self._local_config(config)
                 for chunk in self.router.local_provider.generate_stream(
                     prompt,
@@ -290,7 +312,9 @@ class ProviderManager:
                         metadata=dict(config.metadata),
                     )
                 return
-            raise AIProviderError(f"Async streaming AI provider {coerce_provider(config.provider).value} failed.") from exc
+            raise AIProviderError(
+                f"Async streaming AI provider {coerce_provider(config.provider).value} failed."
+            ) from exc
 
         response = await self.generate_response_async(
             prompt,
@@ -362,7 +386,10 @@ class ProviderManager:
             enable_local_fallback=False,
             cache_enabled=config.cache_enabled,
             system_prompt=config.system_prompt,
-            metadata={**config.metadata, "fallback_from": coerce_provider(config.provider).value},
+            metadata={
+                **config.metadata,
+                "fallback_from": coerce_provider(config.provider).value,
+            },
         )
 
 

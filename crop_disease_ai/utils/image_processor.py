@@ -30,7 +30,9 @@ class ImageProcessor:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2RGB)
         elif len(image_np.shape) == 2:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
-        resized = cv2.resize(image_np, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LINEAR)
+        resized = cv2.resize(
+            image_np, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LINEAR
+        )
         normalized = resized.astype(np.float32) / 255.0
         return normalized
 
@@ -50,7 +52,9 @@ class ImageProcessor:
         if prediction_mask is None:
             gray = cv2.cvtColor(resized, cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            thresh = cv2.threshold(
+                blurred, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+            )[1]
         else:
             thresh = prediction_mask
 
@@ -100,7 +104,11 @@ class ImageProcessor:
 
     @staticmethod
     def detect_edges(image_np):
-        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY) if len(image_np.shape) == 3 else image_np
+        gray = (
+            cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+            if len(image_np.shape) == 3
+            else image_np
+        )
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blurred, 50, 150)
         return edges
@@ -133,9 +141,18 @@ class ImageProcessor:
     def validate_image(uploaded_file):
         if uploaded_file is None:
             return False, "No file provided"
-        allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/tiff"]
+        allowed_types = [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp",
+            "image/tiff",
+        ]
         if uploaded_file.type not in allowed_types:
-            return False, f"Invalid file type: {uploaded_file.type}. Allowed: jpg, png, webp, tiff"
+            return (
+                False,
+                f"Invalid file type: {uploaded_file.type}. Allowed: jpg, png, webp, tiff",
+            )
         max_size = 10 * 1024 * 1024
         if len(uploaded_file.getvalue()) > max_size:
             return False, "File too large. Maximum size: 10MB"

@@ -134,7 +134,9 @@ def test_provider_config_from_mapping_and_defaults() -> None:
         (AIProvider.CUSTOM, "custom-model"),
     ],
 )
-def test_get_default_model_for_cloud_providers(provider: AIProvider, expected: str) -> None:
+def test_get_default_model_for_cloud_providers(
+    provider: AIProvider, expected: str
+) -> None:
     assert get_default_model(provider) == expected
 
 
@@ -142,7 +144,10 @@ def test_provider_aliases_and_validation() -> None:
     assert coerce_provider("hugging_face") == AIProvider.HUGGINGFACE
     assert coerce_mode("fallback") == AIProviderMode.AUTO
     assert is_openai_compatible(AIProvider.GROQ) is True
-    assert validate_api_key(AIProvider.OLLAMA, "") == (True, "Local Ollama does not require an API key.")
+    assert validate_api_key(AIProvider.OLLAMA, "") == (
+        True,
+        "Local Ollama does not require an API key.",
+    )
     assert validate_api_key(AIProvider.ANTHROPIC, "short")[0] is False
     assert validate_api_key(AIProvider.GEMINI, "bad")[0] is False
     assert validate_api_key(AIProvider.OPENAI, "bad-key")[0] is False
@@ -168,16 +173,39 @@ def test_model_router_auto_mode_with_and_without_key() -> None:
     cloud = FailingCloudProvider()
     router = ModelRouter(local_provider=local, cloud_provider=cloud)
 
-    assert router.select(ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.AUTO, api_key="x"))[1] is cloud
-    assert router.select(ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.AUTO, api_key=""))[1] is local
-    assert router.select(ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"))[1] is cloud
+    assert (
+        router.select(
+            ProviderConfig(
+                provider=AIProvider.OPENAI, mode=AIProviderMode.AUTO, api_key="x"
+            )
+        )[1]
+        is cloud
+    )
+    assert (
+        router.select(
+            ProviderConfig(
+                provider=AIProvider.OPENAI, mode=AIProviderMode.AUTO, api_key=""
+            )
+        )[1]
+        is local
+    )
+    assert (
+        router.select(
+            ProviderConfig(
+                provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"
+            )
+        )[1]
+        is cloud
+    )
 
 
 def test_provider_manager_async_cache_and_clear() -> None:
     local = StreamingLocalProvider()
     cloud = FailingCloudProvider()
     manager = ProviderManager(local_provider=local, cloud_provider=cloud)
-    config = ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x")
+    config = ProviderConfig(
+        provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"
+    )
 
     response = asyncio.run(manager.generate_response_async("hello", config))
     cached = asyncio.run(manager.generate_response_async("hello", config))
@@ -188,20 +216,36 @@ def test_provider_manager_async_cache_and_clear() -> None:
     assert manager.generate_response("hello", config).cached is False
 
 
-def test_provider_manager_streaming_and_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_provider_manager_streaming_and_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     local = StreamingLocalProvider()
     cloud = FailingCloudProvider()
     manager = ProviderManager(local_provider=local, cloud_provider=cloud)
 
-    chunks = list(manager.generate_stream("hello", ProviderConfig(provider=AIProvider.OLLAMA)))
+    chunks = list(
+        manager.generate_stream("hello", ProviderConfig(provider=AIProvider.OLLAMA))
+    )
     assert [chunk.text for chunk in chunks] == ["hello", " world"]
 
     fallback_chunks = list(
-        manager.generate_stream("hello", ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"))
+        manager.generate_stream(
+            "hello",
+            ProviderConfig(
+                provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"
+            ),
+        )
     )
     assert [chunk.text for chunk in fallback_chunks] == ["hello", " world"]
 
     with pytest.raises(AIProviderError):
-        list(manager.generate_stream("hello", ProviderConfig(provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"), fallback=False))
-
+        list(
+            manager.generate_stream(
+                "hello",
+                ProviderConfig(
+                    provider=AIProvider.OPENAI, mode=AIProviderMode.CLOUD, api_key="x"
+                ),
+                fallback=False,
+            )
+        )

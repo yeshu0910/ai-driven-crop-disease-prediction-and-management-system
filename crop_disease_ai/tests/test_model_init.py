@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 _tensorflow = pytest.importorskip("tensorflow")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

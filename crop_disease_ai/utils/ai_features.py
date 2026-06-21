@@ -42,7 +42,13 @@ def summarize_text(
         f"Summarize the following crop disease management text in at most {max_words} words. "
         "Use bullet points and keep farmer-facing language clear.\n\n{text}"
     )
-    return _generate(prompt, provider_config, manager, system_prompt=DEFAULT_SYSTEM_PROMPT, max_tokens=512)
+    return _generate(
+        prompt,
+        provider_config,
+        manager,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        max_tokens=512,
+    )
 
 
 def translate_text(
@@ -55,7 +61,13 @@ def translate_text(
         f"Translate the following agricultural guidance to {target_language}. "
         "Preserve safety warnings and technical terms where needed.\n\n{text}"
     )
-    return _generate(prompt, provider_config, manager, system_prompt=DEFAULT_SYSTEM_PROMPT, max_tokens=1024)
+    return _generate(
+        prompt,
+        provider_config,
+        manager,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        max_tokens=1024,
+    )
 
 
 def analyze_image_prediction(
@@ -67,7 +79,9 @@ def analyze_image_prediction(
     provider_config: ProviderConfig,
     manager: ProviderManager | None = None,
 ) -> str:
-    symptoms = "\n".join(f"- {symptom}" for symptom in visible_symptoms) or "- Not provided"
+    symptoms = (
+        "\n".join(f"- {symptom}" for symptom in visible_symptoms) or "- Not provided"
+    )
     prompt = f"""
 Crop: {crop_name}
 Disease: {disease_name}
@@ -79,7 +93,13 @@ Visible symptoms:
 
 Explain this diagnosis in farmer-friendly language. Include likely causes, what to inspect next, and when to seek expert help.
 """
-    return _generate(prompt, provider_config, manager, system_prompt=DEFAULT_SYSTEM_PROMPT, max_tokens=900)
+    return _generate(
+        prompt,
+        provider_config,
+        manager,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        max_tokens=900,
+    )
 
 
 def generate_ai_recommendations(
@@ -106,7 +126,13 @@ Weather context:
 
 Create a concise, actionable management plan. Keep chemical, organic, irrigation, prevention, and safety guidance separate.
 """
-    return _generate(prompt, provider_config, manager, system_prompt=DEFAULT_SYSTEM_PROMPT, max_tokens=1000)
+    return _generate(
+        prompt,
+        provider_config,
+        manager,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        max_tokens=1000,
+    )
 
 
 def generate_report_summary(
@@ -122,7 +148,13 @@ Report data:
 
 Include diagnosis, confidence, severity, urgency, and the top 3 management actions.
 """
-    return _generate(prompt, provider_config, manager, system_prompt=DEFAULT_SYSTEM_PROMPT, max_tokens=700)
+    return _generate(
+        prompt,
+        provider_config,
+        manager,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        max_tokens=700,
+    )
 
 
 def _generate(

@@ -99,14 +99,24 @@ class DatabaseManager:
         conn.commit()
         conn.close()
 
-    def add_farmer(self, name, phone=None, email=None, location=None,
-                   farm_size=None, crops_grown=None):
+    def add_farmer(
+        self,
+        name,
+        phone=None,
+        email=None,
+        location=None,
+        farm_size=None,
+        crops_grown=None,
+    ):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO farmers (name, phone, email, location, farm_size, crops_grown)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (name, phone, email, location, farm_size, crops_grown))
+        """,
+            (name, phone, email, location, farm_size, crops_grown),
+        )
         conn.commit()
         farmer_id = cursor.lastrowid
         conn.close()
@@ -128,22 +138,44 @@ class DatabaseManager:
         conn.close()
         return [dict(r) for r in results]
 
-    def save_prediction(self, farmer_id, image_path, crop_name, disease_name,
-                        confidence, severity=None, infection_percentage=None,
-                        risk_level=None, weather_data=None,
-                        treatment_recommendations=None):
+    def save_prediction(
+        self,
+        farmer_id,
+        image_path,
+        crop_name,
+        disease_name,
+        confidence,
+        severity=None,
+        infection_percentage=None,
+        risk_level=None,
+        weather_data=None,
+        treatment_recommendations=None,
+    ):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO predictions
             (farmer_id, image_path, crop_name, disease_name, confidence,
              severity, infection_percentage, risk_level, weather_data,
              treatment_recommendations)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (farmer_id, image_path, crop_name, disease_name, confidence,
-              severity, infection_percentage, risk_level,
-              json.dumps(weather_data) if weather_data else None,
-              json.dumps(treatment_recommendations) if treatment_recommendations else None))
+        """,
+            (
+                farmer_id,
+                image_path,
+                crop_name,
+                disease_name,
+                confidence,
+                severity,
+                infection_percentage,
+                risk_level,
+                json.dumps(weather_data) if weather_data else None,
+                json.dumps(treatment_recommendations)
+                if treatment_recommendations
+                else None,
+            ),
+        )
         conn.commit()
         pred_id = cursor.lastrowid
         conn.close()
@@ -164,19 +196,23 @@ class DatabaseManager:
             if d.get("treatment_recommendations"):
                 with contextlib.suppress(json.JSONDecodeError, TypeError):
                     d["treatment_recommendations"] = json.loads(
-                        d["treatment_recommendations"])
+                        d["treatment_recommendations"]
+                    )
             return d
         return None
 
     def get_all_predictions(self, limit=100):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT p.*, f.name as farmer_name
             FROM predictions p
             LEFT JOIN farmers f ON p.farmer_id = f.id
             ORDER BY p.created_at DESC LIMIT ?
-        """, (limit,))
+        """,
+            (limit,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
@@ -184,29 +220,49 @@ class DatabaseManager:
     def get_predictions_by_crop(self, crop_name):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT p.*, f.name as farmer_name
             FROM predictions p
             LEFT JOIN farmers f ON p.farmer_id = f.id
             WHERE p.crop_name = ?
             ORDER BY p.created_at DESC
-        """, (crop_name,))
+        """,
+            (crop_name,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
 
-    def log_weather(self, location, temperature=None, humidity=None,
-                    pressure=None, wind_speed=None,
-                    weather_description=None, rainfall=None):
+    def log_weather(
+        self,
+        location,
+        temperature=None,
+        humidity=None,
+        pressure=None,
+        wind_speed=None,
+        weather_description=None,
+        rainfall=None,
+    ):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO weather_logs
             (location, temperature, humidity, pressure, wind_speed,
              weather_description, rainfall)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (location, temperature, humidity, pressure, wind_speed,
-              weather_description, rainfall))
+        """,
+            (
+                location,
+                temperature,
+                humidity,
+                pressure,
+                wind_speed,
+                weather_description,
+                rainfall,
+            ),
+        )
         conn.commit()
         log_id = cursor.lastrowid
         conn.close()
@@ -215,28 +271,48 @@ class DatabaseManager:
     def get_weather_logs(self, limit=50):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM weather_logs
             ORDER BY logged_at DESC LIMIT ?
-        """, (limit,))
+        """,
+            (limit,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
 
-    def save_risk_prediction(self, crop_name, disease_name, risk_level,
-                             risk_score, forecast_date, weather_conditions,
-                             suggestions):
+    def save_risk_prediction(
+        self,
+        crop_name,
+        disease_name,
+        risk_level,
+        risk_score,
+        forecast_date,
+        weather_conditions,
+        suggestions,
+    ):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO disease_risk_predictions
             (crop_name, disease_name, risk_level, risk_score,
              forecast_date, weather_conditions, suggestions)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (crop_name, disease_name, risk_level, risk_score,
-              forecast_date.isoformat() if isinstance(forecast_date, date) else forecast_date,
-              json.dumps(weather_conditions),
-              json.dumps(suggestions) if suggestions else None))
+        """,
+            (
+                crop_name,
+                disease_name,
+                risk_level,
+                risk_score,
+                forecast_date.isoformat()
+                if isinstance(forecast_date, date)
+                else forecast_date,
+                json.dumps(weather_conditions),
+                json.dumps(suggestions) if suggestions else None,
+            ),
+        )
         conn.commit()
         risk_id = cursor.lastrowid
         conn.close()
@@ -246,16 +322,22 @@ class DatabaseManager:
         conn = self.get_connection()
         cursor = conn.cursor()
         if crop_name:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM disease_risk_predictions
                 WHERE crop_name = ?
                 ORDER BY forecast_date DESC LIMIT ?
-            """, (crop_name, limit))
+            """,
+                (crop_name, limit),
+            )
         else:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM disease_risk_predictions
                 ORDER BY forecast_date DESC LIMIT ?
-            """, (limit,))
+            """,
+                (limit,),
+            )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
@@ -268,31 +350,40 @@ class DatabaseManager:
         existing = cursor.fetchone()
         if existing:
             is_healthy = 1 if "healthy" in disease_name.lower() else 0
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE analytics
                 SET total_scans = total_scans + 1,
                     healthy_scans = healthy_scans + ?,
                     diseased_scans = diseased_scans + ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE date = ?
-            """, (is_healthy, 1 - is_healthy, today))
+            """,
+                (is_healthy, 1 - is_healthy, today),
+            )
         else:
             is_healthy = 1 if "healthy" in disease_name.lower() else 0
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO analytics (date, total_scans, healthy_scans, diseased_scans)
                 VALUES (?, 1, ?, ?)
-            """, (today, is_healthy, 1 - is_healthy))
+            """,
+                (today, is_healthy, 1 - is_healthy),
+            )
         conn.commit()
         conn.close()
 
     def get_analytics(self, days=30):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM analytics
             WHERE date >= date('now', '-' || ? || ' days')
             ORDER BY date ASC
-        """, (days,))
+        """,
+            (days,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
@@ -300,12 +391,15 @@ class DatabaseManager:
     def get_disease_frequency(self, limit=20):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT disease_name, COUNT(*) as count
             FROM predictions
             GROUP BY disease_name
             ORDER BY count DESC LIMIT ?
-        """, (limit,))
+        """,
+            (limit,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
@@ -313,7 +407,8 @@ class DatabaseManager:
     def get_monthly_trends(self, months=6):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT strftime('%Y-%m', created_at) as month,
                    COUNT(*) as total,
                    SUM(CASE WHEN disease_name LIKE '%healthy%' THEN 1 ELSE 0 END) as healthy,
@@ -322,7 +417,9 @@ class DatabaseManager:
             WHERE created_at >= date('now', '-' || ? || ' months')
             GROUP BY month
             ORDER BY month ASC
-        """, (months,))
+        """,
+            (months,),
+        )
         results = cursor.fetchall()
         conn.close()
         return [dict(r) for r in results]
@@ -354,18 +451,24 @@ class DatabaseManager:
             "healthy_scans": healthy_scans,
             "diseased_scans": total_scans - healthy_scans,
             "total_crops": total_crops,
-            "most_common_disease": common_disease["disease_name"] if common_disease else "N/A",
-            "most_common_count": common_disease["cnt"] if common_disease else 0
+            "most_common_disease": common_disease["disease_name"]
+            if common_disease
+            else "N/A",
+            "most_common_count": common_disease["cnt"] if common_disease else 0,
         }
 
-    def save_feedback(self, prediction_id, was_correct, actual_disease=None,
-                      comments=None):
+    def save_feedback(
+        self, prediction_id, was_correct, actual_disease=None, comments=None
+    ):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO feedback (prediction_id, was_correct, actual_disease, comments)
             VALUES (?, ?, ?, ?)
-        """, (prediction_id, 1 if was_correct else 0, actual_disease, comments))
+        """,
+            (prediction_id, 1 if was_correct else 0, actual_disease, comments),
+        )
         conn.commit()
         fb_id = cursor.lastrowid
         conn.close()
