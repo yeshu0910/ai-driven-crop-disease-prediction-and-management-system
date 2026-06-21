@@ -4,7 +4,9 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-_float_re: re.Pattern[str] = re.compile(r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})")
+_float_re: re.Pattern[str] = re.compile(
+    r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})"
+)
 
 
 def _decimal_format(value: Any, fmt: str) -> str:
@@ -80,7 +82,7 @@ def t(key: str, **kwargs) -> Any:
 
     if kwargs and isinstance(value, str):
 
-        def replace_match(m):
+        def replace_match(m: re.Match[str]) -> str:
             placeholder_key = m.group(1)
             if placeholder_key in kwargs:
                 return _decimal_format(kwargs[placeholder_key], m.group(2))
@@ -106,7 +108,11 @@ def available_languages() -> list[dict[str, str]]:
 
     for f in sorted(file_paths):
         code = f.stem
-        names: dict[str, str] = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
+        names: dict[str, str] = {
+            "en": "English",
+            "hi": "हिन्दी",
+            "te": "తెలుగు",
+        }
         langs.append({"code": code, "name": names.get(code, code)})
 
     return langs
@@ -120,7 +126,6 @@ def _load_translations(lang: str) -> dict[str, Any]:
 
     if not file_path.exists():
         file_path = _i18n_dir / "en.json"
-        lang = "en"
 
     with open(file_path, encoding="utf-8") as f:
         return json.load(f)
