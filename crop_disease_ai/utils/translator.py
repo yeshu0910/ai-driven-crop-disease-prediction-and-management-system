@@ -15,10 +15,10 @@ def _decimal_format(value: Any, fmt: str) -> str:
     return format(number, fmt)
 
 
-_i18n_dir: Path = Path(__file__).resolve().parent.parent / "i18n"
+_i18n_dir = Path(__file__).resolve().parent.parent / "i18n"
 _translations: dict[str, Any] = {}
 _current_lang: str = "en"
-_lock: Lock = Lock()
+_lock = Lock()
 _supported_languages: list[str] = ["en", "hi", "te"]
 
 
@@ -30,6 +30,7 @@ def load_translations(lang: str) -> None:
     global _translations, _current_lang
     lang = lang if lang in _supported_languages else "en"
     file_path = _i18n_dir / f"{lang}.json"
+
     try:
         with open(str(file_path), "r", encoding="utf-8") as f:
             with _lock:
@@ -53,8 +54,9 @@ def _ensure_loaded() -> None:
         load_translations("en")
 
 
-def t(key: str, **kwargs: Any) -> str:
+def t(key: str, **kwargs) -> Any:
     _ensure_loaded()
+
     try:
         import streamlit as st
 
@@ -78,13 +80,14 @@ def t(key: str, **kwargs: Any) -> str:
 
     if kwargs and isinstance(value, str):
 
-        def replace_match(m: re.Match[str]) -> str:
-            key = m.group(1)
-            if key in kwargs:
-                return _decimal_format(kwargs[key], m.group(2))
+        def replace_match(m):
+            placeholder_key = m.group(1)
+            if placeholder_key in kwargs:
+                return _decimal_format(kwargs[placeholder_key], m.group(2))
             return m.group(0)
 
-        processed: str = _float_re.sub(replace_match, value)
+        processed = _float_re.sub(replace_match, value)
+
         try:
             return processed.format(**kwargs)
         except (KeyError, ValueError):
@@ -93,27 +96,32 @@ def t(key: str, **kwargs: Any) -> str:
     return str(value)
 
 
-def translate_content_list(items: list[str], key_prefix: str) -> list[str]:
+def translate_content_list(items: list[str], key_prefix: str) -> list[Any]:
     return [t(f"{key_prefix}.{item}") for item in items]
 
 
 def available_languages() -> list[dict[str, str]]:
     file_paths = list(_i18n_dir.glob("*.json"))
-    langs: list[dict[str, str]] = []
+    langs = []
+
     for f in sorted(file_paths):
         code = f.stem
         names: dict[str, str] = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
         langs.append({"code": code, "name": names.get(code, code)})
+
     return langs
 
 
 def _load_translations(lang: str) -> dict[str, Any]:
     if lang not in _supported_languages:
         lang = "en"
+
     file_path = _i18n_dir / f"{lang}.json"
+
     if not file_path.exists():
         file_path = _i18n_dir / "en.json"
         lang = "en"
+
     with open(file_path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -123,6 +131,7 @@ def init_i18n(lang: str = "en") -> None:
 
     current = st.session_state.get("language")
     translations = st.session_state.get("translations")
+
     if current != lang or translations is None:
         st.session_state["translations"] = _load_translations(lang)
         st.session_state["language"] = lang
