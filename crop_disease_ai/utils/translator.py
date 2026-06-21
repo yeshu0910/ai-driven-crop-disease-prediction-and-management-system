@@ -1,5 +1,4 @@
 import json
-import os
 import re
 from pathlib import Path
 from threading import Lock
@@ -105,8 +104,8 @@ def available_languages():
 
 
 def _load_translations(lang):
-    if lang in _supported_languages:
-        lang = lang if lang in _supported_languages else "en"
+    if lang not in _supported_languages:
+        lang = "en"
     file_path = _i18n_dir / f"{lang}.json"
     if not file_path.exists():
         file_path = _i18n_dir / "en.json"

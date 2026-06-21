@@ -7,8 +7,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from utils.translator import t
-
 from utils.translator import init_i18n, t
 
 st.set_page_config(page_title=t("app.title") + " - " + t("nav.analytics"), page_icon="📊", layout="wide")
