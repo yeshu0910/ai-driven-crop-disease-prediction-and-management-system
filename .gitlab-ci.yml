@@ -1,9 +1,9 @@
+
 stages:
   - validate
   - lint
   - format
   - type_check
-  - dead_code
   - test
   - coverage
   - security
@@ -11,35 +11,29 @@ stages:
 
 
 # =============================
-# GLOBAL BASE SETUP (IMPORTANT)
+# BASE TEMPLATE (SAFE)
 # =============================
 .default_python:
   image: python:3.11
   before_script:
     - python -m pip install --upgrade pip
 
-    # 🔥 HARD CHECK: ensures file exists in CI workspace
-    - ls -lah
-    - test -f requirements.txt || (echo "❌ requirements.txt NOT FOUND in CI workspace" && exit 1)
+    # ONLY validate once (not every job blindly failing CI)
+    - if [ ! -f requirements.txt ]; then echo "❌ requirements.txt missing in commit $CI_COMMIT_SHA"; ls -lah; exit 1; fi
 
-    # install dependencies safely
     - pip install -r requirements.txt
-
-    # sanity check (fails early if deps missing)
-    - python -c "import httpx, numpy, dotenv; print('✅ Dependencies OK')"
 
 
 # =============================
-# VALIDATION STAGE (NEW)
+# VALIDATION
 # =============================
 validate_repo:
   extends: .default_python
   stage: validate
   script:
-    - echo "🔍 Validating repository structure..."
-    - find . -name "requirements.txt"
-    - test -f README.md || echo "⚠ README missing"
-    - test -f LICENSE || echo "⚠ LICENSE missing"
+    - echo "🔍 Repo structure check"
+    - find . -name requirements.txt
+    - test -f README.md
 
 
 # =============================
@@ -56,7 +50,7 @@ lint:
 
 
 # =============================
-# FORMAT CHECK
+# FORMAT
 # =============================
 format:
   extends: .default_python
@@ -78,17 +72,6 @@ type_check:
 
 
 # =============================
-# DEAD CODE DETECTION
-# =============================
-dead_code:
-  extends: .default_python
-  stage: dead_code
-  script:
-    - pip install vulture
-    - vulture . || true
-
-
-# =============================
 # TEST
 # =============================
 test:
@@ -96,6 +79,7 @@ test:
   stage: test
   script:
     - pip install pytest pytest-cov
+    - python -c "import httpx, numpy, dotenv; print('OK')"
     - pytest
 
 
@@ -111,7 +95,7 @@ coverage:
 
 
 # =============================
-# SECURITY SCANS
+# SECURITY
 # =============================
 security_scan:
   extends: .default_python
