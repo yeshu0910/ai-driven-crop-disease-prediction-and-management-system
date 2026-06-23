@@ -41,6 +41,7 @@ typecheck:
 security_bandit:
   extends: .python_job
   stage: security
+  needs: []
   script:
     - pip install -e ".[sec]"
     - bandit -r crop_disease_ai -x tests
@@ -50,10 +51,20 @@ security_bandit:
 test_and_coverage:
   extends: .python_job
   stage: test
+  needs:
+    - lint_and_format
+    - typecheck
+    - security_bandit
+    - security_secrets
+    - security_dependency
   script:
     - pip install -e ".[test]"
     - pytest --cov=crop_disease_ai --cov-report=html
   artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
     paths:
       - htmlcov/
 
@@ -62,8 +73,11 @@ test_and_coverage:
 build_docker:
   stage: build
   image: docker:24
+  needs:
+    - test_and_coverage
   services:
-    - docker:24-dind
+    - name: docker:24-dind
+      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
   script:
