@@ -57,10 +57,9 @@ test:
   script:
     - cd crop_disease_ai
     - pip install --upgrade pip
-    - pip install -r requirements.txt
+    - pip install --retries 10 --timeout 120 -r requirements.txt
     - pip install pytest pytest-cov
     - pytest
-
 # ---------------- COVERAGE ----------------
 coverage:
   stage: coverage
