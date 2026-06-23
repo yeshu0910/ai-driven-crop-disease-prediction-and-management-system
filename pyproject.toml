@@ -35,27 +35,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lint = [
-    "ruff>=0.8.0"
-]
-
-typecheck = [
-    "mypy>=1.10"
-]
-
-sec = [
-    "bandit>=1.7.0",
-    "pip-audit>=2.7.0"
-]
-
-test = [
-    "pytest>=8.0",
-    "pytest-cov>=5.0"
-]
-
-dev = [
-    "crop-disease-ai[lint,typecheck,sec,test]"
-]
+lint = ["ruff>=0.8.0"]
+typecheck = ["mypy>=1.10"]
+sec = ["bandit>=1.7.0", "pip-audit>=2.7.0"]
+test = ["pytest>=8.0", "pytest-cov>=5.0"]
+dev = ["crop-disease-ai[lint,typecheck,sec,test]"]
 
 [tool.setuptools.packages.find]
 include = ["crop_disease_ai*"]
@@ -73,6 +57,7 @@ addopts = """
 --cov-report=html
 --cov-fail-under=80
 """
+
 markers = [
     "slow",
     "integration",
