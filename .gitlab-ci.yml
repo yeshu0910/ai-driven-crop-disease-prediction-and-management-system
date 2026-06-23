@@ -10,7 +10,7 @@ stages:
 
 
 # =========================
-# LINT
+# LINT (RUFF ONLY)
 # =========================
 lint:
   stage: lint
@@ -21,7 +21,7 @@ lint:
 
 
 # =========================
-# FORMAT
+# FORMAT CHECK (RUFF)
 # =========================
 format:
   stage: format
@@ -43,7 +43,7 @@ type_check:
 
 
 # =========================
-# DEAD CODE
+# DEAD CODE CHECK
 # =========================
 dead_code:
   stage: dead_code
@@ -54,7 +54,7 @@ dead_code:
 
 
 # =========================
-# TEST (optional stage)
+# TESTS
 # =========================
 test:
   stage: test
@@ -65,6 +65,7 @@ test:
     - pytest
   allow_failure: true
 
+
 # =========================
 # COVERAGE (FIXED)
 # =========================
@@ -74,17 +75,19 @@ coverage:
   script:
     - pip install -e .
     - pip install pytest pytest-cov
-    - pytest --cov=crop_disease_ai --cov-report=term-missing --cov-report=xml
+    - pytest --cov=crop_disease_ai --cov-report=xml --cov-report=term-missing
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+    paths:
+      - coverage.xml
   allow_failure: true
 
 
 # =========================
-# SECURITY SCAN
+# SECURITY SCANS
 # =========================
 security_scan:
   stage: security
@@ -111,36 +114,20 @@ semgrep:
 
 
 # =========================
-# PYLINT
+# LINT (EXTRA OPTIONAL RUFF RUN)
 # =========================
-pylint:
+ruff_extended:
   stage: lint
   image: python:3.11
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install pylint
-    - pip install -r requirements.txt || true
   script:
-    - pylint . || true
+    - pip install ruff
+    - ruff check .
+    - ruff format --check .
   allow_failure: true
 
 
 # =========================
-# FLAKE8
-# =========================
-flake8:
-  stage: lint
-  image: python:3.11
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install flake8
-  script:
-    - flake8 . --max-line-length=120 || true
-  allow_failure: true
-
-
-# =========================
-# COMPLIANCE
+# COMPLIANCE CHECK (FIXED)
 # =========================
 compliance:
   stage: compliance
