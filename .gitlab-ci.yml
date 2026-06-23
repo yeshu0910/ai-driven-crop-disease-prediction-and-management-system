@@ -2,23 +2,25 @@ stages:
   - static_analysis
   - security
   - test
+  - build
   - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  DOCKER_TLS_CERTDIR: ""   # REQUIRED for docker:dind
 
 cache:
   paths:
     - .cache/pip/
 
-# 🔥 Base Python template (must be hidden job)
+# ================= BASE PYTHON TEMPLATE =================
 .python_job:
   image: python:3.11
   before_script:
     - python --version
     - python -m pip install --upgrade pip
 
-# ---------------- STATIC ANALYSIS ----------------
+# ================= STATIC ANALYSIS =================
 
 lint_and_format:
   extends: .python_job
@@ -34,7 +36,7 @@ typecheck:
     - pip install -e ".[typecheck]"
     - mypy crop_disease_ai
 
-# ---------------- SECURITY ----------------
+# ================= SECURITY =================
 
 security_bandit:
   extends: .python_job
@@ -43,7 +45,7 @@ security_bandit:
     - pip install -e ".[sec]"
     - bandit -r crop_disease_ai -x tests
 
-# ---------------- TEST ----------------
+# ================= TEST =================
 
 test_and_coverage:
   extends: .python_job
@@ -55,10 +57,24 @@ test_and_coverage:
     paths:
       - htmlcov/
 
-# ---------------- DEPLOY ----------------
+# ================= BUILD DOCKER IMAGE =================
+
+build_docker:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+  script:
+    - docker version
+    - docker build -t crop-disease-ai:latest .
+    - docker images
+
+# ================= DEPLOY =================
 
 deploy_staging:
-  image: alpine:latest
   stage: deploy
+  image: alpine:latest
   script:
     - echo "Deploy staging complete"
