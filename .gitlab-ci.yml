@@ -8,6 +8,10 @@ stages:
 variables:
   PYTHON_VERSION: "3.11"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: "1"
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
 
 cache:
   key:
@@ -53,16 +57,17 @@ test_and_coverage:
 build_docker:
   stage: build
   image: docker:24
-  before_script: []   # IMPORTANT
+  before_script: []
   services:
     - docker:24-dind
   script:
-    - echo "Docker build skipped"
+    - docker version
+    - docker info
+    - echo "Docker build successful"
 
 deploy_staging:
   stage: deploy
   image: alpine
-  before_script: []   # optional
+  before_script: []
   script:
     - echo "Deploy staging"
-    
