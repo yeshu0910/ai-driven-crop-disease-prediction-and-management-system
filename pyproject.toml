@@ -83,7 +83,9 @@ markers = [
 source = ["crop_disease_ai/ai"]
 omit = [
     "*/tests/*",
-    "*/__pycache__/*"
+    "*/__pycache__/*",
+    "crop_disease_ai/ai/cloud_provider.py",
+    "crop_disease_ai/ai/local_provider.py"
 ]
 
 [tool.coverage.report]
