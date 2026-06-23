@@ -8,83 +8,81 @@ stages:
   - security
   - compliance
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-cache:
-  paths:
-    - .cache/pip/
-
-# ---------------- BASE TEMPLATE ----------------
-.python:
+# ---------------- BASE SETUP ----------------
+.default_python:
   image: python:3.11
   before_script:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
 
+
 # ---------------- LINT ----------------
 lint:
-  extends: .python
+  extends: .default_python
   stage: lint
   script:
-    - pip install ruff
+    - pip install ruff pylint flake8
     - ruff check .
+    - pylint . || true
+    - flake8 . --max-line-length=120 || true
+
 
 # ---------------- FORMAT ----------------
 format:
-  extends: .python
+  extends: .default_python
   stage: format
   script:
     - pip install ruff
     - ruff format --check .
 
+
 # ---------------- TYPE CHECK ----------------
 type_check:
-  extends: .python
+  extends: .default_python
   stage: type_check
   script:
     - pip install mypy
     - mypy . || true
 
+
 # ---------------- DEAD CODE ----------------
 dead_code:
-  extends: .python
+  extends: .default_python
   stage: dead_code
   script:
     - pip install vulture
-    - vulture crop_disease_ai || true
+    - vulture . || true
+
 
 # ---------------- TEST ----------------
 test:
-  extends: .python
+  extends: .default_python
   stage: test
   script:
     - pip install pytest pytest-cov
     - python -c "import httpx, numpy, dotenv; print('DEPENDENCIES OK')"
     - pytest
 
+
 # ---------------- COVERAGE ----------------
 coverage:
-  extends: .python
+  extends: .default_python
   stage: coverage
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=crop_disease_ai --cov-report=term-missing
+    - pytest --cov=crop_disease_ai --cov-report=term
+
 
 # ---------------- SECURITY ----------------
 security_scan:
-  extends: .python
+  extends: .default_python
   stage: security
   script:
-    - pip install bandit
+    - pip install bandit pip-audit
     - bandit -r . || true
-
-dependency_audit:
-  extends: .python
-  stage: security
-  script:
-    - pip install pip-audit
     - pip-audit || true
+
 
 semgrep:
   stage: security
@@ -92,6 +90,7 @@ semgrep:
   script:
     - semgrep scan --config auto .
   allow_failure: true
+
 
 # ---------------- COMPLIANCE ----------------
 compliance:
@@ -101,3 +100,4 @@ compliance:
     - test -f README.md
     - test -f LICENSE || true
     - test -f SECURITY.md || true
+    
