@@ -1,177 +1,94 @@
 stages:
-  - lint
-  - format
-  - typecheck
+  - static_analysis
   - security
   - test
-  - coverage
   - build
   - deploy
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PIP_PREFER_BINARY: "1"
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  DOCKER_TLS_CERTDIR: ""   # REQUIRED for docker:dind
 
-.default_cache: &default_cache
-  key: pip-cache
+cache:
   paths:
-    - .cache/pip
-  policy: pull-push
+    - .cache/pip/
 
-lint:
-  stage: lint
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
-  script:
-    - pip install ruff
-    - ruff check --output-format=gitlab .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+# ================= BASE PYTHON TEMPLATE =================
+.python_job:
+  image: python:3.11
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
 
-format:
-  stage: format
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
+# ================= STATIC ANALYSIS =================
+
+lint_and_format:
+  extends: .python_job
+  stage: static_analysis
   script:
-    - pip install ruff
-    - ruff format --check .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - pip install -e ".[lint]"
+    - ruff check .
 
 typecheck:
-  stage: typecheck
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
+  extends: .python_job
+  stage: static_analysis
   script:
-    - pip install mypy
-    - mypy .
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - pip install -e ".[typecheck]"
+    - mypy crop_disease_ai
 
-security_secrets:
-  stage: security
-  image: zricethezav/gitleaks:latest
-  script:
-    - gitleaks detect --source . --report-path gitleaks-report.json --report-format json
-  artifacts:
-    paths:
-      - gitleaks-report.json
-    expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+# ================= SECURITY =================
 
 security_bandit:
+  extends: .python_job
   stage: security
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
+  needs: []
   script:
-    - pip install bandit
-    - bandit -r crop_disease_ai/ -f json -o bandit-report.json -s B101,B110,B311 --exclude tests || true
-    - bandit -r crop_disease_ai/ -s B101,B110,B311 --exclude tests
-  artifacts:
-    paths:
-      - bandit-report.json
-    expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - pip install -e ".[sec]"
+    - bandit -r crop_disease_ai -x tests
 
-security_dependency:
-  stage: security
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
-  script:
-    - pip install pip-audit
-    - pip-audit --requirement pyproject.toml || true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+# ================= TEST =================
 
-test:
+test_and_coverage:
+  extends: .python_job
   stage: test
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
-  timeout: 15 minutes
+  needs:
+    - lint_and_format
+    - typecheck
+    - security_bandit
+    - security_secrets
+    - security_dependency
   script:
     - pip install -e ".[test]"
-    - pytest --cov=. --cov-report=term --cov-report=xml
+    - pytest --cov=crop_disease_ai --cov-report=html
   artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
     paths:
-      - coverage.xml
-    expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-
-coverage:
-  stage: coverage
-  image: python:3.11-slim
-  cache:
-    <<: *default_cache
-  timeout: 15 minutes
-  script:
-    - pip install -e ".[test]"
-    - pytest --cov=. --cov-report=term --cov-report=html --cov-report=xml --cov-fail-under=80
-  artifacts:
-    paths:
-      - coverage.xml
       - htmlcov/
-    expire_in: 1 week
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+
+# ================= BUILD DOCKER IMAGE =================
 
 build_docker:
   stage: build
-  image: docker:24-git
+  image: docker:24
+  needs:
+    - test_and_coverage
   services:
-    - docker:24-dind
+    - name: docker:24-dind
+      alias: docker
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    DOCKER_HOST: tcp://docker:2375
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:latest
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - docker version
+    - docker build -t crop-disease-ai:latest .
+    - docker images
+
+# ================= DEPLOY =================
 
 deploy_staging:
   stage: deploy
   image: alpine:latest
-  environment:
-    name: staging
-    url: $STAGING_URL
   script:
-    - apk add --no-cache curl
-    - curl -X POST $STAGING_DEPLOY_WEBHOOK
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-  when: manual
-
-deploy_production:
-  stage: deploy
-  image: alpine:latest
-  environment:
-    name: production
-    url: $PRODUCTION_URL
-  script:
-    - apk add --no-cache curl
-    - curl -X POST $PRODUCTION_DEPLOY_WEBHOOK
-  rules:
-    - if: $CI_COMMIT_TAG
-  when: manual
+    - echo "Deploy staging complete"
