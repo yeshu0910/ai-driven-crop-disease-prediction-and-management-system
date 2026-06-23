@@ -4,7 +4,9 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-_float_re: re.Pattern[str] = re.compile(r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})")
+_float_re: re.Pattern[str] = re.compile(
+    r"(?<!\{)\{([^{}]+):(\.\d+[fFeEgGxXoO])\}(?!\})"
+)
 
 
 def _decimal_format(value: Any, fmt: str) -> str:
