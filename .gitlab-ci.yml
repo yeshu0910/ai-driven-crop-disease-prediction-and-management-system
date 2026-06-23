@@ -1,4 +1,5 @@
 stages:
+  - validate
   - lint
   - format
   - type_check
@@ -9,15 +10,41 @@ stages:
   - compliance
 
 
-# ---------------- BASE SETUP ----------------
+# =============================
+# GLOBAL BASE SETUP (IMPORTANT)
+# =============================
 .default_python:
   image: python:3.11
   before_script:
     - python -m pip install --upgrade pip
+
+    # 🔥 HARD CHECK: ensures file exists in CI workspace
+    - ls -lah
+    - test -f requirements.txt || (echo "❌ requirements.txt NOT FOUND in CI workspace" && exit 1)
+
+    # install dependencies safely
     - pip install -r requirements.txt
 
+    # sanity check (fails early if deps missing)
+    - python -c "import httpx, numpy, dotenv; print('✅ Dependencies OK')"
 
-# ---------------- LINT ----------------
+
+# =============================
+# VALIDATION STAGE (NEW)
+# =============================
+validate_repo:
+  extends: .default_python
+  stage: validate
+  script:
+    - echo "🔍 Validating repository structure..."
+    - find . -name "requirements.txt"
+    - test -f README.md || echo "⚠ README missing"
+    - test -f LICENSE || echo "⚠ LICENSE missing"
+
+
+# =============================
+# LINT
+# =============================
 lint:
   extends: .default_python
   stage: lint
@@ -28,7 +55,9 @@ lint:
     - flake8 . --max-line-length=120 || true
 
 
-# ---------------- FORMAT ----------------
+# =============================
+# FORMAT CHECK
+# =============================
 format:
   extends: .default_python
   stage: format
@@ -37,7 +66,9 @@ format:
     - ruff format --check .
 
 
-# ---------------- TYPE CHECK ----------------
+# =============================
+# TYPE CHECK
+# =============================
 type_check:
   extends: .default_python
   stage: type_check
@@ -46,7 +77,9 @@ type_check:
     - mypy . || true
 
 
-# ---------------- DEAD CODE ----------------
+# =============================
+# DEAD CODE DETECTION
+# =============================
 dead_code:
   extends: .default_python
   stage: dead_code
@@ -55,26 +88,31 @@ dead_code:
     - vulture . || true
 
 
-# ---------------- TEST ----------------
+# =============================
+# TEST
+# =============================
 test:
   extends: .default_python
   stage: test
   script:
     - pip install pytest pytest-cov
-    - python -c "import httpx, numpy, dotenv; print('DEPENDENCIES OK')"
     - pytest
 
 
-# ---------------- COVERAGE ----------------
+# =============================
+# COVERAGE
+# =============================
 coverage:
   extends: .default_python
   stage: coverage
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=crop_disease_ai --cov-report=term
+    - pytest --cov=crop_disease_ai --cov-report=term-missing
 
 
-# ---------------- SECURITY ----------------
+# =============================
+# SECURITY SCANS
+# =============================
 security_scan:
   extends: .default_python
   stage: security
@@ -92,7 +130,9 @@ semgrep:
   allow_failure: true
 
 
-# ---------------- COMPLIANCE ----------------
+# =============================
+# COMPLIANCE
+# =============================
 compliance:
   image: python:3.11
   stage: compliance
@@ -100,4 +140,3 @@ compliance:
     - test -f README.md
     - test -f LICENSE || true
     - test -f SECURITY.md || true
-    
