@@ -53,13 +53,16 @@ dead_code:
 # ---------------- TEST ----------------
 test:
   stage: test
-  image: python:3.11
   script:
-    - cd crop_disease_ai
-    - pip install --upgrade pip
-    - pip install --retries 10 --timeout 120 -r requirements.txt
+    - export PYTHONPATH=$CI_PROJECT_DIR
+    - pip install -r requirements.txt
     - pip install pytest pytest-cov
-    - pytest
+    - pytest --cov=crop_disease_ai --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 # ---------------- COVERAGE ----------------
 coverage:
   stage: coverage
