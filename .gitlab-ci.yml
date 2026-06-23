@@ -9,6 +9,7 @@ stages:
   - compliance
 
 
+# ---------------- LINT (Ruff only - fast + modern) ----------------
 lint:
   stage: lint
   image: python:3.11
@@ -17,6 +18,7 @@ lint:
     - ruff check .
 
 
+# ---------------- FORMAT CHECK ----------------
 format:
   stage: format
   image: python:3.11
@@ -25,74 +27,51 @@ format:
     - ruff format --check .
 
 
+# ---------------- TYPE CHECK ----------------
 type_check:
   stage: type_check
   image: python:3.11
   script:
     - pip install mypy
-    - mypy . || true
+    - mypy crop_disease_ai
 
 
+# ---------------- DEAD CODE ----------------
 dead_code:
   stage: dead_code
   image: python:3.11
   script:
     - pip install vulture
-    - vulture . || true
+    - vulture crop_disease_ai
 
 
+# ---------------- TEST ----------------
 test:
   stage: test
   image: python:3.11
   script:
-    - pip install -r requirements.txt || true
+    - pip install -r requirements.txt
     - pip install pytest
-    - pytest
+    - pytest -q
 
 
+# ---------------- COVERAGE ----------------
 coverage:
   stage: coverage
   image: python:3.11
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=. --cov-report=term
+    - pytest --cov=crop_disease_ai --cov-report=term-missing --cov-fail-under=80
 
 
+# ---------------- SECURITY (FIXED) ----------------
 security_scan:
   stage: security
   image: python:3.11
   script:
-    - pip install bandit
-    - bandit -r . || true
-
-
-dependency_audit:
-  stage: security
-  image: python:3.11
-  script:
-    - pip install pip-audit
-    - pip-audit || true
-    
-pylint:
-  stage: lint
-  image: python:3.11
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install pylint
-    - pip install -r requirements.txt || true
-  script:
-    - pylint . || true
-  allow_failure: true
-
-flake8:
-  stage: lint
-  image: python:3.11
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install flake8
-  script:
-    - flake8 . --max-line-length=120 || true
-  allow_failure: true
+    - pip install bandit pip-audit
+    - bandit -r crop_disease_ai -ll
+    - pip-audit
 
 
 semgrep:
@@ -100,9 +79,9 @@ semgrep:
   image: semgrep/semgrep
   script:
     - semgrep scan --config auto .
-  allow_failure: true
 
 
+# ---------------- COMPLIANCE ----------------
 compliance:
   stage: compliance
   image: python:3.11
@@ -110,3 +89,4 @@ compliance:
     - test -f README.md
     - test -f LICENSE || true
     - test -f SECURITY.md || true
+    
