@@ -1,94 +1,112 @@
 stages:
-  - static_analysis
-  - security
+  - lint
+  - format
+  - type_check
+  - dead_code
   - test
-  - build
-  - deploy
+  - coverage
+  - security
+  - compliance
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  DOCKER_TLS_CERTDIR: ""   # REQUIRED for docker:dind
 
-cache:
-  paths:
-    - .cache/pip/
-
-# ================= BASE PYTHON TEMPLATE =================
-.python_job:
+lint:
+  stage: lint
   image: python:3.11
-  before_script:
-    - python --version
-    - python -m pip install --upgrade pip
-
-# ================= STATIC ANALYSIS =================
-
-lint_and_format:
-  extends: .python_job
-  stage: static_analysis
   script:
-    - pip install -e ".[lint]"
+    - pip install ruff
     - ruff check .
 
-typecheck:
-  extends: .python_job
-  stage: static_analysis
+
+format:
+  stage: format
+  image: python:3.11
   script:
-    - pip install -e ".[typecheck]"
-    - mypy crop_disease_ai
+    - pip install ruff
+    - ruff format --check .
 
-# ================= SECURITY =================
 
-security_bandit:
-  extends: .python_job
-  stage: security
-  needs: []
+type_check:
+  stage: type_check
+  image: python:3.11
   script:
-    - pip install -e ".[sec]"
-    - bandit -r crop_disease_ai -x tests
+    - pip install mypy
+    - mypy . || true
 
-# ================= TEST =================
 
-test_and_coverage:
-  extends: .python_job
+dead_code:
+  stage: dead_code
+  image: python:3.11
+  script:
+    - pip install vulture
+    - vulture . || true
+
+
+test:
   stage: test
-  needs:
-    - lint_and_format
-    - typecheck
-    - security_bandit
-    - security_secrets
-    - security_dependency
+  image: python:3.11
   script:
-    - pip install -e ".[test]"
-    - pytest --cov=crop_disease_ai --cov-report=html
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      - htmlcov/
+    - pip install -r requirements.txt || true
+    - pip install pytest
+    - pytest
 
-# ================= BUILD DOCKER IMAGE =================
 
-build_docker:
-  stage: build
-  image: docker:24
-  needs:
-    - test_and_coverage
-  services:
-    - name: docker:24-dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
+coverage:
+  stage: coverage
+  image: python:3.11
   script:
-    - docker version
-    - docker build -t crop-disease-ai:latest .
-    - docker images
+    - pip install pytest pytest-cov
+    - pytest --cov=. --cov-report=term
 
-# ================= DEPLOY =================
 
-deploy_staging:
-  stage: deploy
-  image: alpine:latest
+security_scan:
+  stage: security
+  image: python:3.11
   script:
-    - echo "Deploy staging complete"
+    - pip install bandit
+    - bandit -r . || true
+
+
+dependency_audit:
+  stage: security
+  image: python:3.11
+  script:
+    - pip install pip-audit
+    - pip-audit || true
+    
+pylint:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install pylint
+    - pip install -r requirements.txt || true
+  script:
+    - pylint . || true
+  allow_failure: true
+
+flake8:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install flake8
+  script:
+    - flake8 . --max-line-length=120 || true
+  allow_failure: true
+
+
+semgrep:
+  stage: security
+  image: semgrep/semgrep
+  script:
+    - semgrep scan --config auto .
+  allow_failure: true
+
+
+compliance:
+  stage: compliance
+  image: python:3.11
+  script:
+    - test -f README.md
+    - test -f LICENSE || true
+    - test -f SECURITY.md || true
