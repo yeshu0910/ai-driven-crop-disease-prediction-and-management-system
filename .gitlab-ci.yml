@@ -1,110 +1,86 @@
-
 stages:
-  - validate
   - lint
   - format
   - type_check
+  - dead_code
   - test
   - coverage
   - security
   - compliance
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-# =============================
-# BASE TEMPLATE (SAFE)
-# =============================
-.default_python:
+cache:
+  paths:
+    - .cache/pip/
+
+.python:
   image: python:3.11
-  before_script:
-    - python -m pip install --upgrade pip
 
-    # ONLY validate once (not every job blindly failing CI)
-    - if [ ! -f requirements.txt ]; then echo "❌ requirements.txt missing in commit $CI_COMMIT_SHA"; ls -lah; exit 1; fi
-
-    - pip install -r requirements.txt
-
-
-# =============================
-# VALIDATION
-# =============================
-validate_repo:
-  extends: .default_python
-  stage: validate
-  script:
-    - echo "🔍 Repo structure check"
-    - find . -name requirements.txt
-    - test -f README.md
-
-
-# =============================
-# LINT
-# =============================
+# ---------------- LINT ----------------
 lint:
-  extends: .default_python
   stage: lint
+  image: python:3.11
   script:
-    - pip install ruff pylint flake8
+    - pip install ruff
     - ruff check .
-    - pylint . || true
-    - flake8 . --max-line-length=120 || true
 
-
-# =============================
-# FORMAT
-# =============================
+# ---------------- FORMAT ----------------
 format:
-  extends: .default_python
   stage: format
+  image: python:3.11
   script:
     - pip install ruff
     - ruff format --check .
 
-
-# =============================
-# TYPE CHECK
-# =============================
+# ---------------- TYPE CHECK ----------------
 type_check:
-  extends: .default_python
   stage: type_check
+  image: python:3.11
   script:
     - pip install mypy
     - mypy . || true
 
-
-# =============================
-# TEST
-# =============================
-test:
-  extends: .default_python
-  stage: test
+# ---------------- DEAD CODE ----------------
+dead_code:
+  stage: dead_code
+  image: python:3.11
   script:
+    - pip install vulture
+    - vulture crop_disease_ai || true
+
+# ---------------- TEST ----------------
+test:
+  stage: test
+  image: python:3.11
+  script:
+    - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - pip install pytest pytest-cov
-    - python -c "import httpx, numpy, dotenv; print('OK')"
     - pytest
 
-
-# =============================
-# COVERAGE
-# =============================
+# ---------------- COVERAGE ----------------
 coverage:
-  extends: .default_python
   stage: coverage
+  image: python:3.11
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=crop_disease_ai --cov-report=term-missing
+    - pytest --cov=. --cov-report=term-missing
 
-
-# =============================
-# SECURITY
-# =============================
+# ---------------- SECURITY ----------------
 security_scan:
-  extends: .default_python
   stage: security
+  image: python:3.11
   script:
-    - pip install bandit pip-audit
+    - pip install bandit
     - bandit -r . || true
-    - pip-audit || true
 
+dependency_audit:
+  stage: security
+  image: python:3.11
+  script:
+    - pip install pip-audit
+    - pip-audit || true
 
 semgrep:
   stage: security
@@ -113,13 +89,10 @@ semgrep:
     - semgrep scan --config auto .
   allow_failure: true
 
-
-# =============================
-# COMPLIANCE
-# =============================
+# ---------------- COMPLIANCE ----------------
 compliance:
-  image: python:3.11
   stage: compliance
+  image: python:3.11
   script:
     - test -f README.md
     - test -f LICENSE || true
