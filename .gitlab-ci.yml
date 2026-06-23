@@ -55,6 +55,7 @@ test:
   stage: test
   image: python:3.11
   script:
+    - cd crop_disease_ai
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip install pytest pytest-cov
