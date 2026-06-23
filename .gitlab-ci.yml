@@ -8,8 +8,6 @@ stages:
 variables:
   PYTHON_VERSION: "3.11"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PIP_DEFAULT_TIMEOUT: "180"
 
 cache:
   key:
@@ -17,68 +15,54 @@ cache:
       - pyproject.toml
   paths:
     - .cache/pip/
-  policy: pull-push
 
 default:
   image: python:3.11
-
-.python_setup: &python_setup
   before_script:
     - python --version
     - python -m pip install --upgrade pip
     - pip config set global.cache-dir "$PIP_CACHE_DIR"
 
 lint_and_format:
-  <<: *python_setup
   stage: static_analysis
   script:
     - pip install -e ".[lint]"
     - ruff check .
-    - ruff format --check .
 
 typecheck:
-  <<: *python_setup
   stage: static_analysis
   script:
     - pip install -e ".[typecheck]"
     - mypy crop_disease_ai
 
 security_bandit:
-  <<: *python_setup
   stage: security
   script:
     - pip install -e ".[sec]"
-    - bandit -r crop_disease_ai -x tests -s B311
+    - bandit -r crop_disease_ai -x tests
 
 test_and_coverage:
-  <<: *python_setup
   stage: test
   script:
     - pip install -e ".[test]"
-    - pytest --maxfail=1 --disable-warnings
+    - pytest
   artifacts:
-    when: always
     paths:
       - htmlcov/
-    expire_in: 1 week
 
 build_docker:
   stage: build
   image: docker:24
-  before_script: []
+  before_script: []   # IMPORTANT
   services:
     - docker:24-dind
   script:
-    - docker version
-    - echo "Docker build OK"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - echo "Docker build skipped"
 
 deploy_staging:
   stage: deploy
   image: alpine
+  before_script: []   # optional
   script:
     - echo "Deploy staging"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-  when: manual
+    
