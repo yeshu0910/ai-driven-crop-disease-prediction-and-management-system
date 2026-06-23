@@ -15,69 +15,73 @@ cache:
   paths:
     - .cache/pip/
 
+# ---------------- BASE TEMPLATE ----------------
 .python:
   image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
 
 # ---------------- LINT ----------------
 lint:
+  extends: .python
   stage: lint
-  image: python:3.11
   script:
     - pip install ruff
     - ruff check .
 
 # ---------------- FORMAT ----------------
 format:
+  extends: .python
   stage: format
-  image: python:3.11
   script:
     - pip install ruff
     - ruff format --check .
 
 # ---------------- TYPE CHECK ----------------
 type_check:
+  extends: .python
   stage: type_check
-  image: python:3.11
   script:
     - pip install mypy
     - mypy . || true
 
 # ---------------- DEAD CODE ----------------
 dead_code:
+  extends: .python
   stage: dead_code
-  image: python:3.11
   script:
     - pip install vulture
     - vulture crop_disease_ai || true
 
 # ---------------- TEST ----------------
 test:
+  extends: .python
   stage: test
-  image: python:3.11
   script:
-    - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - pip install pytest pytest-cov
+    - python -c "import httpx, numpy, dotenv; print('DEPENDENCIES OK')"
     - pytest
 
 # ---------------- COVERAGE ----------------
 coverage:
+  extends: .python
   stage: coverage
-  image: python:3.11
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=. --cov-report=term-missing
+    - pytest --cov=crop_disease_ai --cov-report=term-missing
 
 # ---------------- SECURITY ----------------
 security_scan:
+  extends: .python
   stage: security
-  image: python:3.11
   script:
     - pip install bandit
     - bandit -r . || true
 
 dependency_audit:
+  extends: .python
   stage: security
-  image: python:3.11
   script:
     - pip install pip-audit
     - pip-audit || true
@@ -91,8 +95,8 @@ semgrep:
 
 # ---------------- COMPLIANCE ----------------
 compliance:
-  stage: compliance
   image: python:3.11
+  stage: compliance
   script:
     - test -f README.md
     - test -f LICENSE || true
