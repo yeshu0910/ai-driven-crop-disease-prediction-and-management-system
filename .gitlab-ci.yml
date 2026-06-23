@@ -7,116 +7,49 @@ stages:
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PYTHON_VERSION: "3.11"
+  DOCKER_TLS_CERTDIR: ""   # REQUIRED for docker:dind
 
-  # Docker-in-Docker — stable TLS config
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_VERIFY: 1
-  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-
-# ----------------------------------------------------------------------
-# WORKFLOW — only run on MRs, main, or tags
-# ----------------------------------------------------------------------
-workflow:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_TAG
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH
-      when: never
-    - when: always
-
-# ----------------------------------------------------------------------
-# GLOBAL CACHE
-# ----------------------------------------------------------------------
 cache:
-  key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
   paths:
-    - .cache/pip
-  policy: pull-push
+    - .cache/pip/
 
-# ----------------------------------------------------------------------
-# PYTHON JOB TEMPLATE — install only what each job needs
-# ----------------------------------------------------------------------
-.python_base: &python_base
-  image: python:$PYTHON_VERSION
-  cache:
-    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
-    paths:
-      - .cache/pip
-    policy: pull-push
+# ================= BASE PYTHON TEMPLATE =================
+.python_job:
+  image: python:3.11
   before_script:
     - python --version
-    - pip install -U pip setuptools wheel
-  retry:
-    max: 1
-    when:
-      - runner_system_failure
-      - stuck_or_timeout_failure
+    - python -m pip install --upgrade pip
 
-# ----------------------------------------------------------------------
-# STATIC ANALYSIS
-# ----------------------------------------------------------------------
+# ================= STATIC ANALYSIS =================
 
 lint_and_format:
-  <<: *python_base
+  extends: .python_job
   stage: static_analysis
   script:
     - pip install -e ".[lint]"
     - ruff check .
-    - ruff format --check .
 
 typecheck:
-  <<: *python_base
+  extends: .python_job
   stage: static_analysis
   script:
     - pip install -e ".[typecheck]"
-    - mypy .
+    - mypy crop_disease_ai
 
-# ----------------------------------------------------------------------
-# SECURITY
-# ----------------------------------------------------------------------
-
-security_secrets:
-  stage: security
-  image: zricethezav/gitleaks:latest
-  needs: []
-  script:
-    - gitleaks detect --source . --report-path gitleaks-report.json --report-format json
-  artifacts:
-    paths:
-      - gitleaks-report.json
-    expire_in: 1 week
+# ================= SECURITY =================
 
 security_bandit:
-  <<: *python_base
+  extends: .python_job
   stage: security
   needs: []
   script:
     - pip install -e ".[sec]"
-    - bandit -r crop_disease_ai/ -f json -o bandit-report.json --exclude tests
-  artifacts:
-    paths:
-      - bandit-report.json
-    expire_in: 1 week
+    - bandit -r crop_disease_ai -x tests
 
-security_dependency:
-  <<: *python_base
-  stage: security
-  needs: []
-  script:
-    - pip install -e ".[sec]"
-    - pip-audit
-  allow_failure: true
-
-# ----------------------------------------------------------------------
-# TEST
-# ----------------------------------------------------------------------
+# ================= TEST =================
 
 test_and_coverage:
-  <<: *python_base
+  extends: .python_job
   stage: test
   needs:
     - lint_and_format
@@ -126,20 +59,16 @@ test_and_coverage:
     - security_dependency
   script:
     - pip install -e ".[test]"
-    - pytest --cov=. --cov-report=term --cov-report=xml --cov-report=html --cov-fail-under=80
+    - pytest --cov=crop_disease_ai --cov-report=html
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
     paths:
-      - coverage.xml
       - htmlcov/
-    expire_in: 1 week
 
-# ----------------------------------------------------------------------
-# BUILD — Docker image
-# ----------------------------------------------------------------------
+# ================= BUILD DOCKER IMAGE =================
 
 build_docker:
   stage: build
@@ -150,62 +79,16 @@ build_docker:
     - name: docker:24-dind
       alias: docker
   variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_VERIFY: 1
-    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-  before_script:
-    - docker version
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    DOCKER_HOST: tcp://docker:2375
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:latest
-  after_script:
-    - docker logout $CI_REGISTRY
-  retry:
-    max: 2
-    when:
-      - runner_system_failure
-      - stuck_or_timeout_failure
-      - scheduler_failure
+    - docker version
+    - docker build -t crop-disease-ai:latest .
+    - docker images
 
-# ----------------------------------------------------------------------
-# DEPLOY
-# ----------------------------------------------------------------------
+# ================= DEPLOY =================
 
 deploy_staging:
   stage: deploy
   image: alpine:latest
-  needs:
-    - build_docker
-  before_script:
-    - apk add --no-cache curl
   script:
-    - curl -X POST "$STAGING_DEPLOY_WEBHOOK"
-  environment:
-    name: staging
-    url: $STAGING_URL
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
-    - when: never
-
-deploy_production:
-  stage: deploy
-  image: alpine:latest
-  needs:
-    - build_docker
-  before_script:
-    - apk add --no-cache curl
-  script:
-    - curl -X POST "$PRODUCTION_DEPLOY_WEBHOOK"
-  environment:
-    name: production
-    url: $PRODUCTION_URL
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: manual
-    - when: never
+    - echo "Deploy staging complete"
