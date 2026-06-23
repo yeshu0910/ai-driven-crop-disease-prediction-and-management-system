@@ -154,17 +154,17 @@ class WeatherAPI:
         }
 
     def _mock_weather(self, location):
-        import random
+        import random  # nosec: mock/demo data only
 
-        random.seed(hash(location or "Default") % (2**32))
+        random.seed(hash(location or "Default") % (2**32))  # nosec: deterministic mock, not security-sensitive
         return {
             "location": location if self._is_city_name(location) else "Farm Location",
-            "temperature": round(28 + random.random() * 12, 1),
-            "feels_like": round(26 + random.random() * 10, 1),
-            "humidity": round(50 + random.random() * 40, 1),
-            "pressure": round(1000 + random.random() * 30, 1),
-            "wind_speed": round(2 + random.random() * 8, 1),
-            "weather_description": random.choice(
+            "temperature": round(28 + random.random() * 12, 1),  # nosec: mock data
+            "feels_like": round(26 + random.random() * 10, 1),  # nosec: mock data
+            "humidity": round(50 + random.random() * 40, 1),  # nosec: mock data
+            "pressure": round(1000 + random.random() * 30, 1),  # nosec: mock data
+            "wind_speed": round(2 + random.random() * 8, 1),  # nosec: mock data
+            "weather_description": random.choice(  # nosec: mock data
                 [
                     "clear sky",
                     "few clouds",
@@ -176,7 +176,7 @@ class WeatherAPI:
                 ]
             ),
             "weather_icon": "01d",
-            "clouds": round(random.random() * 100, 1),
+            "clouds": round(random.random() * 100, 1),  # nosec: mock data
             "lat": 0,
             "lon": 0,
             "timestamp": datetime.now().isoformat(),
@@ -184,24 +184,24 @@ class WeatherAPI:
         }
 
     def _mock_forecast(self, location, days):
-        import random
+        import random  # nosec: mock/demo data only
 
-        random.seed(hash(location or "Default") % (2**32))
+        random.seed(hash(location or "Default") % (2**32))  # nosec: deterministic mock, not security-sensitive
         forecasts = []
-        base_temp = 28 + random.random() * 8
+        base_temp = 28 + random.random() * 8  # nosec: mock data
         for i in range(days):
             date = (datetime.now() + timedelta(days=i + 1)).strftime("%Y-%m-%d")
-            temp_var = random.uniform(-3, 3)
+            temp_var = random.uniform(-3, 3)  # nosec: mock data
             forecasts.append(
                 {
                     "date": date,
                     "temp_min": round(base_temp + temp_var - 2, 1),
                     "temp_max": round(base_temp + temp_var + 4, 1),
                     "temp_avg": round(base_temp + temp_var + 1, 1),
-                    "humidity_avg": round(55 + random.random() * 35, 1),
-                    "wind_speed_avg": round(2 + random.random() * 6, 1),
-                    "pressure_avg": round(1005 + random.random() * 20, 1),
-                    "description": random.choice(
+                    "humidity_avg": round(55 + random.random() * 35, 1),  # nosec: mock data
+                    "wind_speed_avg": round(2 + random.random() * 6, 1),  # nosec: mock data
+                    "pressure_avg": round(1005 + random.random() * 20, 1),  # nosec: mock data
+                    "description": random.choice(  # nosec: mock data
                         [
                             "clear sky",
                             "few clouds",
