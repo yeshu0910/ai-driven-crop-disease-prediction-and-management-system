@@ -8,17 +8,7 @@ stages:
   - security
   - compliance
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-cache:
-  paths:
-    - .cache/pip/
-
-.python:
-  image: python:3.11
-
-# ---------------- LINT ----------------
 lint:
   stage: lint
   image: python:3.11
@@ -26,7 +16,7 @@ lint:
     - pip install ruff
     - ruff check .
 
-# ---------------- FORMAT ----------------
+
 format:
   stage: format
   image: python:3.11
@@ -34,7 +24,7 @@ format:
     - pip install ruff
     - ruff format --check .
 
-# ---------------- TYPE CHECK ----------------
+
 type_check:
   stage: type_check
   image: python:3.11
@@ -42,15 +32,15 @@ type_check:
     - pip install mypy
     - mypy . || true
 
-# ---------------- DEAD CODE ----------------
+
 dead_code:
   stage: dead_code
   image: python:3.11
   script:
     - pip install vulture
-    - vulture crop_disease_ai || true
+    - vulture . || true
 
-# ---------------- TEST ----------------
+
 test:
   stage: test
   script:
@@ -63,15 +53,16 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-# ---------------- COVERAGE ----------------
+
+
 coverage:
   stage: coverage
   image: python:3.11
   script:
     - pip install pytest pytest-cov
-    - pytest --cov=. --cov-report=term-missing
+    - pytest --cov=. --cov-report=term
 
-# ---------------- SECURITY ----------------
+
 security_scan:
   stage: security
   image: python:3.11
@@ -79,12 +70,35 @@ security_scan:
     - pip install bandit
     - bandit -r . || true
 
+
 dependency_audit:
   stage: security
   image: python:3.11
   script:
     - pip install pip-audit
     - pip-audit || true
+    
+pylint:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install pylint
+    - pip install -r requirements.txt || true
+  script:
+    - pylint . || true
+  allow_failure: true
+
+flake8:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install flake8
+  script:
+    - flake8 . --max-line-length=120 || true
+  allow_failure: true
+
 
 semgrep:
   stage: security
@@ -93,7 +107,7 @@ semgrep:
     - semgrep scan --config auto .
   allow_failure: true
 
-# ---------------- COMPLIANCE ----------------
+
 compliance:
   stage: compliance
   image: python:3.11
