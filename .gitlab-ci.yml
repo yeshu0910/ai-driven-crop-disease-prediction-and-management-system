@@ -59,11 +59,11 @@ dead_code:
 test:
   stage: test
   image: python:3.11
-  allow_failure: true
   script:
+    - pip install -e .
     - pip install pytest pytest-cov
     - pytest
-
+  allow_failure: true
 
 # =========================
 # COVERAGE (FIXED)
@@ -72,6 +72,7 @@ coverage:
   stage: coverage
   image: python:3.11
   script:
+    - pip install -e .
     - pip install pytest pytest-cov
     - pytest --cov=crop_disease_ai --cov-report=term-missing --cov-report=xml
   artifacts:
@@ -79,9 +80,7 @@ coverage:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-    paths:
-      - coverage.xml
-  allow_failure: true   # 🔥 prevents pipeline failure due to low coverage
+  allow_failure: true
 
 
 # =========================
