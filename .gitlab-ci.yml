@@ -55,7 +55,8 @@ test:
   stage: test
   image: python:3.11
   script:
-    - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
     - pip install pytest pytest-cov
     - pytest
 
