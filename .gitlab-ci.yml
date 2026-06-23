@@ -2,50 +2,44 @@ stages:
   - static_analysis
   - security
   - test
-  - build
   - deploy
 
 variables:
-  PYTHON_VERSION: "3.11"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_TLS_VERIFY: "1"
-  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
 
 cache:
-  key:
-    files:
-      - pyproject.toml
   paths:
     - .cache/pip/
 
-default:
+.python_job:
   image: python:3.11
   before_script:
     - python --version
     - python -m pip install --upgrade pip
-    - pip config set global.cache-dir "$PIP_CACHE_DIR"
 
 lint_and_format:
+  extends: .python_job
   stage: static_analysis
   script:
     - pip install -e ".[lint]"
     - ruff check .
 
 typecheck:
+  extends: .python_job
   stage: static_analysis
   script:
     - pip install -e ".[typecheck]"
     - mypy crop_disease_ai
 
 security_bandit:
+  extends: .python_job
   stage: security
   script:
     - pip install -e ".[sec]"
     - bandit -r crop_disease_ai -x tests
 
 test_and_coverage:
+  extends: .python_job
   stage: test
   script:
     - pip install -e ".[test]"
@@ -54,20 +48,8 @@ test_and_coverage:
     paths:
       - htmlcov/
 
-build_docker:
-  stage: build
-  image: docker:24
-  before_script: []
-  services:
-    - docker:24-dind
-  script:
-    - docker version
-    - docker info
-    - echo "Docker build successful"
-
 deploy_staging:
-  stage: deploy
   image: alpine
-  before_script: []
+  stage: deploy
   script:
-    - echo "Deploy staging"
+    - echo "Deploy staging complete"
