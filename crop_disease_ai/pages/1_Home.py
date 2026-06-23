@@ -1,4 +1,4 @@
-import random
+import random  # nosec: demo chart data only
 import sys
 from pathlib import Path
 
@@ -192,8 +192,8 @@ def render_workflow():
 
 def render_quick_stats_chart():
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-    healthy_vals = [random.randint(10, 30) for _ in range(6)]
-    diseased_vals = [random.randint(5, 20) for _ in range(6)]
+    healthy_vals = [random.randint(10, 30) for _ in range(6)]  # nosec: demo chart data
+    diseased_vals = [random.randint(5, 20) for _ in range(6)]  # nosec: demo chart data
 
     fig = go.Figure()
     fig.add_trace(
