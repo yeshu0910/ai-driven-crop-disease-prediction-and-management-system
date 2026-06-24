@@ -73,25 +73,10 @@ test:
 coverage:
   stage: coverage
   image: python:3.11
-  cache:
-    paths:
-      - .cache/pip/
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-    PIP_DEFAULT_TIMEOUT: "300"
   script:
     - pip install --upgrade pip
-    - pip install --retries 10 -e .
-    - pip install pytest pytest-cov
-    - pytest --cov=. --cov-report=xml --cov-report=term-missing
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      - coverage.xml
-  allow_failure: true
+    - pip install -e .[test]
+    - pytest
 
 
 # =========================
