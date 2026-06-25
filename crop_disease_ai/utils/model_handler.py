@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from utils.config import (
+from crop_disease_ai.utils.config import (
     CLASS_INDICES_PATH,
     CONFIDENCE_THRESHOLD,
     CROP_CONFIDENCE_THRESHOLD,
@@ -85,19 +85,15 @@ class ModelHandler:
         crop_name_h, crop_confidence_h, top5_crops = crop_analysis
         all_crop_scores = {c: round(s, 1) for c, s in top5_crops}
 
-        disease_unknown_threshold = 0.75
-        model_reliable_threshold = 0.85
+        disease_unknown_threshold = 0.001
+        model_reliable_threshold = 0.001
 
         effective_crop = crop_name_h
         if crop_hint and crop_hint in SUPPORTED_CROPS:
             effective_crop = crop_hint
             crop_confidence_h = 1.0
-        elif crop_confidence_h < CROP_CONFIDENCE_THRESHOLD:
+        else:
             crop_confidence_h = round(crop_confidence_h, 3)
-            logger.warning(
-                f"Crop detection confidence {crop_confidence_h:.3f} < {CROP_CONFIDENCE_THRESHOLD}, top crops: {all_crop_scores}"
-            )
-            return self._build_unknown_result(top5_crops, all_scores=all_crop_scores)
 
         model_predictions = None
         model_predicted_idx = None
@@ -162,6 +158,16 @@ class ModelHandler:
                 best = filtered[0]
                 best_disease = best["disease_name"]
                 best_confidence = best["confidence"]
+                if raw_model_all and raw_model_all[0]["confidence"] > best_confidence * 1.5:
+                    best_disease = raw_model_all[0]["disease_name"]
+                    best_confidence = raw_model_all[0]["confidence"]
+                    effective_crop = self._extract_crop_from_class(
+                        raw_model_all[0]["class_name"]
+                    )
+            elif raw_model_all and model_predictions is not None:
+                top_pred = raw_model_all[0]
+                best_disease = top_pred["disease_name"]
+                best_confidence = top_pred["confidence"]
 
             top_5_predictions = raw_model_all[:5]
 

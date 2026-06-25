@@ -34,21 +34,37 @@ def render_ambient_background():
 
 
 def init_session_state():
-    if "theme" not in st.session_state:
-        st.session_state["theme"] = "light"
-    if "weather_location" not in st.session_state:
-        st.session_state["weather_location"] = ""
-    if "farmer_name" not in st.session_state:
-        st.session_state["farmer_name"] = ""
-    if "farm_location" not in st.session_state:
-        st.session_state["farm_location"] = ""
-    if "language" not in st.session_state:
-        st.session_state["language"] = "en"
-    if "db_initialized" not in st.session_state:
-        from database.db_manager import DatabaseManager
+    """Safely initialise ALL required session_state keys at startup."""
+    defaults = {
+        "theme": "light",
+        "weather_location": "",
+        "farmer_name": "",
+        "farm_location": "",
+        "language": "en",
+        "db_initialized": False,
+        "current_page": "",
+        "last_result": None,
+        "prediction_history": [],
+        "detection_settings": {
+            "confidence_threshold": 0.5,
+            "model_variant": "default",
+            "enable_xai": True,
+            "enable_severity": True,
+            "enable_weather": True,
+        },
+    }
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-        DatabaseManager()
-        st.session_state["db_initialized"] = True
+    if not st.session_state["db_initialized"]:
+        try:
+            from database.db_manager import DatabaseManager
+
+            DatabaseManager()
+            st.session_state["db_initialized"] = True
+        except Exception as e:
+            st.error(f"Database initialization failed: {e}")
 
 
 def render_sidebar():
