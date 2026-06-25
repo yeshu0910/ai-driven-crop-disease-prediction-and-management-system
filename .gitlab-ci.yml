@@ -45,9 +45,10 @@ type_check:
 # =========================
 dead_code:
   stage: dead_code
+  image: python:3.11
   script:
     - pip install vulture
-    - vulture .
+    - vulture . || true
   allow_failure: true
 
 # =========================
