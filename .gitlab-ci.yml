@@ -1,131 +1,106 @@
 stages:
   - lint
-  - format
   - type_check
-  - dead_code
   - test
-  - coverage
   - security
   - compliance
 
+# =========================================================
+# GLOBAL DEFAULTS, CACHING, & VARIABLES
+# =========================================================
+default:
+  image: python:3.11-slim
+  before_script:
+    - python -V
+    - pip install --upgrade pip
+  cache:
+    key:
+      files:
+        - pyproject.toml
+        - setup.py
+        - requirements.txt
+    paths:
+      - .cache/pip
 
-# =========================
-# LINT (RUFF ONLY)
-# =========================
-lint:
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_ROOT_USER_ACTION: "ignore" # Suppresses pip root user warnings
+
+# =========================================================
+# STAGE 1: LINT (Fast structural/syntax validation)
+# =========================================================
+ruff_lint_and_format:
   stage: lint
-  image: python:3.11
   script:
     - pip install ruff
     - ruff check .
-
-
-# =========================
-# FORMAT CHECK (RUFF)
-# =========================
-format:
-  stage: format
-  image: python:3.11
-  script:
-    - pip install ruff
     - ruff format --check .
 
-
-# =========================
-# TYPE CHECK
-# =========================
+# =========================================================
+# STAGE 2: TYPE CHECK & DEAD CODE
+# =========================================================
 type_check:
   stage: type_check
-  image: python:3.11
   script:
+    - pip install -e . # Installs package dependencies to resolve imports
     - pip install mypy
-    - mypy . || true
-
-
-# =========================
-# DEAD CODE CHECK
-# =========================
-dead_code:
-  stage: dead_code
-  image: python:3.11
-  script:
-    - pip install vulture
-    - vulture . || true
-
-
-# =========================
-# TESTS
-# =========================
-test:
-  stage: test
-  image: python:3.11
-  script:
-    - pip install --upgrade pip
-    - pip install --no-cache-dir -e .
-    - pip install pytest pytest-cov
-    - pytest
+    - mypy .
   allow_failure: true
 
-
-# =========================
-# COVERAGE (FIXED)
-# =========================
-coverage:
-  stage: coverage
-  image: python:3.11
+dead_code:
+  stage: type_check
   script:
-    - pip install --upgrade pip
-    - pip install -e .[test]
-    - pytest
+    - pip install vulture
+    - vulture .
+  allow_failure: true
 
+# =========================================================
+# STAGE 3: TEST & COVERAGE
+# =========================================================
+test_and_coverage:
+  stage: test
+  script:
+    - pip install -e .[test] || pip install pytest pytest-cov .
+    - pytest --cov=crop_disease_ai --cov-report=term --cov-report=xml:coverage.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  allow_failure: true
 
-# =========================
-# SECURITY SCANS
-# =========================
+# =========================================================
+# STAGE 4: SECURITY SCANS
+# =========================================================
 security_scan:
   stage: security
-  image: python:3.11
   script:
     - pip install bandit
-    - bandit -r . || true
-
+    - bandit -r crop_disease_ai/
+  allow_failure: true
 
 dependency_audit:
   stage: security
-  image: python:3.11
   script:
     - pip install pip-audit
-    - pip-audit || true
-
+    - pip-audit
+  allow_failure: true
 
 semgrep:
   stage: security
   image: semgrep/semgrep
+  before_script: [] # Clears the default python upgrade step for native binary container
   script:
     - semgrep scan --config auto .
   allow_failure: true
 
-
-# =========================
-# RUFF EXTRA CHECK
-# =========================
-ruff_extended:
-  stage: lint
-  image: python:3.11
-  script:
-    - pip install ruff
-    - ruff check .
-    - ruff format --check .
-  allow_failure: true
-
-
-# =========================
-# COMPLIANCE CHECK
-# =========================
+# =========================================================
+# STAGE 5: COMPLIANCE CHECK
+# =========================================================
 compliance:
   stage: compliance
-  image: python:3.11
   script:
     - test -f README.md
-    - test -f LICENSE || true
-    - test -f SECURITY.md || true
+    - test -f LICENSE || echo "Warning: Missing LICENSE file"
+    - test -f SECURITY.md || echo "Warning: Missing SECURITY.md file"
