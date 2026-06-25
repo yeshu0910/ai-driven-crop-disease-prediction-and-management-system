@@ -93,6 +93,7 @@ coverage:
       - coverage.xml
   allow_failure: true
     - pip install -e .[test]
+
     - pytest
 
 
