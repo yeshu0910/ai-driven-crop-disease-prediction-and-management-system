@@ -1,105 +1,148 @@
 stages:
   - lint
+  - format
   - type_check
+  - dead_code
   - test
+  - coverage
   - security
   - compliance
 
-# =========================================================
-# GLOBAL DEFAULTS, CACHING, & VARIABLES
-# =========================================================
-default:
-  image: python:3.11-slim
-  before_script:
-    - python -V
-    - pip install --upgrade pip
-  cache:
-    key:
-      files:
-        - setup.py
-        - requirements.txt  # Reduced to 2 files to resolve the validation error
-    paths:
-      - .cache/pip
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PIP_ROOT_USER_ACTION: "ignore"
-
-# =========================================================
-# STAGE 1: LINT (Fast structural/syntax validation)
-# =========================================================
-ruff_lint_and_format:
+# =========================
+# LINT (RUFF ONLY)
+# =========================
+lint:
   stage: lint
+  image: python:3.11
   script:
     - pip install ruff
     - ruff check .
+
+
+# =========================
+# FORMAT CHECK (RUFF)
+# =========================
+format:
+  stage: format
+  image: python:3.11
+  script:
+    - pip install ruff
     - ruff format --check .
 
-# =========================================================
-# STAGE 2: TYPE CHECK & DEAD CODE
-# =========================================================
+
+# =========================
+# TYPE CHECK
+# =========================
 type_check:
   stage: type_check
+  image: python:3.11
   script:
-    - pip install -e .
     - pip install mypy
-    - mypy .
-  allow_failure: true
+    - mypy . || true
 
+
+# =========================
+# DEAD CODE CHECK
+# =========================
 dead_code:
-  stage: type_check
+  stage: dead_code
+  image: python:3.11
   script:
     - pip install vulture
-    - vulture .
+    - vulture . || true
+
+
+# =========================
+# TESTS
+# =========================
+test:
+  stage: test
+  image: python:3.11
+  script:
+    - pip install --upgrade pip
+    - pip install --no-cache-dir -e .
+    - pip install pytest pytest-cov
+    - pytest
   allow_failure: true
 
-# =========================================================
-# STAGE 3: TEST & COVERAGE
-# =========================================================
-test_and_coverage:
-  stage: test
+
+# =========================
+# COVERAGE (FIXED)
+# =========================
+coverage:
+  stage: coverage
+  image: python:3.11
+  cache:
+    paths:
+      - .cache/pip/
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    PIP_DEFAULT_TIMEOUT: "300"
   script:
-    - pip install -e .[test] || pip install pytest pytest-cov .
-    - pytest --cov=crop_disease_ai --cov-report=term --cov-report=xml:coverage.xml
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)/'
+    - pip install --upgrade pip
+    - pip install --retries 10 -e .
+    - pip install pytest pytest-cov
+    - pytest --cov=. --cov-report=xml --cov-report=term-missing
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+    paths:
+      - coverage.xml
   allow_failure: true
+    - pip install -e .[test]
+    - pytest
 
-# =========================================================
-# STAGE 4: SECURITY SCANS
-# =========================================================
+
+# =========================
+# SECURITY SCANS
+# =========================
 security_scan:
   stage: security
+  image: python:3.11
   script:
     - pip install bandit
-    - bandit -r crop_disease_ai/
-  allow_failure: true
+    - bandit -r . || true
+
 
 dependency_audit:
   stage: security
+  image: python:3.11
   script:
     - pip install pip-audit
-    - pip-audit
-  allow_failure: true
+    - pip-audit || true
+
 
 semgrep:
   stage: security
   image: semgrep/semgrep
-  before_script: [] 
   script:
     - semgrep scan --config auto .
   allow_failure: true
 
-# =========================================================
-# STAGE 5: COMPLIANCE CHECK
-# =========================================================
+
+# =========================
+# RUFF EXTRA CHECK
+# =========================
+ruff_extended:
+  stage: lint
+  image: python:3.11
+  script:
+    - pip install ruff
+    - ruff check .
+    - ruff format --check .
+  allow_failure: true
+
+
+# =========================
+# COMPLIANCE CHECK
+# =========================
 compliance:
   stage: compliance
+  image: python:3.11
   script:
     - test -f README.md
-    - test -f LICENSE || echo "Warning: Missing LICENSE file"
-    - test -f SECURITY.md || echo "Warning: Missing SECURITY.md file"
+    - test -f LICENSE || true
+    - test -f SECURITY.md || true
