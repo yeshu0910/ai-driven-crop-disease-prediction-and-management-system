@@ -248,13 +248,6 @@ def render_prediction_results(result, image_np, models):
         disease_color = severity_result["color"]
         icon = severity_result.get("icon", "🔬")
 
-    severity_label = (
-        t("severity." + severity_result["severity"].lower())
-        if severity_result["severity"].lower()
-        in ["healthy", "mild", "moderate", "severe"]
-        else severity_result["severity"]
-    )
-
     st.markdown(
         f"""
         <div style="background: linear-gradient(135deg, {disease_color}15, {disease_color}08);
