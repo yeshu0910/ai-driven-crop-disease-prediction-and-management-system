@@ -1,10 +1,12 @@
-﻿# Conversation history storage for agents
+# Conversation history storage for agents
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-CONVERSATION_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "conversations.json"
+CONVERSATION_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "conversations.json"
+)
 
 
 class ConversationHistory:
@@ -36,7 +38,9 @@ class ConversationHistory:
         records.append(record)
         self._save(records)
 
-    def get_conversation(self, agent_name: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_conversation(
+        self, agent_name: Optional[str] = None, limit: int = 100
+    ) -> List[Dict[str, Any]]:
         records = self._load()
         if agent_name:
             records = [r for r in records if r.get("agent") == agent_name]

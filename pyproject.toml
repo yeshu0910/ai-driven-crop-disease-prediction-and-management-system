@@ -118,3 +118,5 @@ ignore_missing_imports = true
 strict = false
 warn_unused_configs = true
 exclude = ["tests/"]
+explicit_package_bases = true
+namespace_packages = true

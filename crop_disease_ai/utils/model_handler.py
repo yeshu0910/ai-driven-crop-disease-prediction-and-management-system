@@ -158,7 +158,10 @@ class ModelHandler:
                 best = filtered[0]
                 best_disease = best["disease_name"]
                 best_confidence = best["confidence"]
-                if raw_model_all and raw_model_all[0]["confidence"] > best_confidence * 1.5:
+                if (
+                    raw_model_all
+                    and raw_model_all[0]["confidence"] > best_confidence * 1.5
+                ):
                     best_disease = raw_model_all[0]["disease_name"]
                     best_confidence = raw_model_all[0]["confidence"]
                     effective_crop = self._extract_crop_from_class(

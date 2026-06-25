@@ -1,4 +1,4 @@
-﻿from .conversation_history import ConversationHistory
+from .conversation_history import ConversationHistory
 from .farmer_memory import FarmerMemory
 
 __all__ = [

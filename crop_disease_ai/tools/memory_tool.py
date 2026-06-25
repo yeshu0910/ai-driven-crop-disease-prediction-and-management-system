@@ -1,9 +1,11 @@
-﻿# Memory storage wrapper tool for ADK
+# Memory storage wrapper tool for ADK
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-AGENT_MEMORY_PATH = Path(__file__).resolve().parent.parent / "data" / "agent_memory.json"
+AGENT_MEMORY_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "agent_memory.json"
+)
 
 
 # ADK typed function

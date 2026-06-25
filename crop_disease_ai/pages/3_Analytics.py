@@ -304,17 +304,17 @@ def render_insights_panel(stats):
     st.markdown(
         f"""
         <div class="card">
-            <div class="info-box {'green' if healthy_pct > 50 else 'orange'}">
-                <strong>{t('analytics.crop_health_rate', pct=f'{healthy_pct:.1f}')}</strong><br>
-                <strong>{t('analytics.disease_incidence', pct=f'{disease_pct:.1f}')}</strong>
+            <div class="info-box {"green" if healthy_pct > 50 else "orange"}">
+                <strong>{t("analytics.crop_health_rate", pct=f"{healthy_pct:.1f}")}</strong><br>
+                <strong>{t("analytics.disease_incidence", pct=f"{disease_pct:.1f}")}</strong>
             </div>
             <div class="info-box blue" style="margin-top: 0.5rem;">
-                <strong>{t('analytics.most_common_disease', disease=stats.get('most_common_disease', 'N/A'))}</strong><br>
-                <strong>{t('analytics.cases', count=stats.get('most_common_count', 0))}</strong>
+                <strong>{t("analytics.most_common_disease", disease=stats.get("most_common_disease", "N/A"))}</strong><br>
+                <strong>{t("analytics.cases", count=stats.get("most_common_count", 0))}</strong>
             </div>
             <div class="info-box blue" style="margin-top: 0.5rem;">
-                <strong>{t('analytics.crops_monitored', count=stats.get('total_crops', 0))}</strong><br>
-                <strong>{t('analytics.total_entries', count=total)}</strong>
+                <strong>{t("analytics.crops_monitored", count=stats.get("total_crops", 0))}</strong><br>
+                <strong>{t("analytics.total_entries", count=total)}</strong>
             </div>
         </div>
     """,
