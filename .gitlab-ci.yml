@@ -8,9 +8,8 @@ stages:
   - security
   - compliance
 
-
 # =========================
-# LINT (RUFF ONLY)
+# LINT (RUFF)
 # =========================
 lint:
   stage: lint
@@ -19,9 +18,8 @@ lint:
     - pip install ruff
     - ruff check .
 
-
 # =========================
-# FORMAT CHECK (RUFF)
+# FORMAT CHECK
 # =========================
 format:
   stage: format
@@ -30,17 +28,15 @@ format:
     - pip install ruff
     - ruff format --check .
 
-
 # =========================
-# TYPE CHECK
+# TYPE CHECK (MYPI)
 # =========================
 type_check:
   stage: type_check
   image: python:3.11
   script:
     - pip install mypy
-    - mypy . || true
-
+    - mypy .
 
 # =========================
 # DEAD CODE CHECK
@@ -50,8 +46,7 @@ dead_code:
   image: python:3.11
   script:
     - pip install vulture
-    - vulture . || true
-
+    - vulture .
 
 # =========================
 # TESTS
@@ -61,14 +56,13 @@ test:
   image: python:3.11
   script:
     - pip install --upgrade pip
-    - pip install --no-cache-dir -e .
+    - pip install -e .
     - pip install pytest pytest-cov
     - pytest
   allow_failure: true
 
-
 # =========================
-# COVERAGE (FIXED)
+# COVERAGE
 # =========================
 coverage:
   stage: coverage
@@ -81,7 +75,7 @@ coverage:
     PIP_DEFAULT_TIMEOUT: "300"
   script:
     - pip install --upgrade pip
-    - pip install --retries 10 -e .
+    - pip install -e .
     - pip install pytest pytest-cov
     - pytest --cov=. --cov-report=xml --cov-report=term-missing
   artifacts:
@@ -92,10 +86,6 @@ coverage:
     paths:
       - coverage.xml
   allow_failure: true
-    - pip install -e .[test]
-
-    - pytest
-
 
 # =========================
 # SECURITY SCANS
@@ -106,7 +96,7 @@ security_scan:
   script:
     - pip install bandit
     - bandit -r . || true
-
+  allow_failure: true
 
 dependency_audit:
   stage: security
@@ -114,7 +104,7 @@ dependency_audit:
   script:
     - pip install pip-audit
     - pip-audit || true
-
+  allow_failure: true
 
 semgrep:
   stage: security
@@ -123,9 +113,8 @@ semgrep:
     - semgrep scan --config auto .
   allow_failure: true
 
-
 # =========================
-# RUFF EXTRA CHECK
+# EXTRA RUFF CHECK
 # =========================
 ruff_extended:
   stage: lint
@@ -135,7 +124,6 @@ ruff_extended:
     - ruff check .
     - ruff format --check .
   allow_failure: true
-
 
 # =========================
 # COMPLIANCE CHECK
