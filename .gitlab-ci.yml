@@ -16,15 +16,14 @@ default:
   cache:
     key:
       files:
-        - pyproject.toml
         - setup.py
-        - requirements.txt
+        - requirements.txt  # Reduced to 2 files to resolve the validation error
     paths:
       - .cache/pip
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PIP_ROOT_USER_ACTION: "ignore" # Suppresses pip root user warnings
+  PIP_ROOT_USER_ACTION: "ignore"
 
 # =========================================================
 # STAGE 1: LINT (Fast structural/syntax validation)
@@ -42,7 +41,7 @@ ruff_lint_and_format:
 type_check:
   stage: type_check
   script:
-    - pip install -e . # Installs package dependencies to resolve imports
+    - pip install -e .
     - pip install mypy
     - mypy .
   allow_failure: true
@@ -90,7 +89,7 @@ dependency_audit:
 semgrep:
   stage: security
   image: semgrep/semgrep
-  before_script: [] # Clears the default python upgrade step for native binary container
+  before_script: [] 
   script:
     - semgrep scan --config auto .
   allow_failure: true
