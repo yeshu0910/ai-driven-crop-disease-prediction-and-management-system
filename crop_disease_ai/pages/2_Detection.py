@@ -297,17 +297,17 @@ def render_prediction_results(result, image_np, models):
                     <div class="severity-meter-fill" style="width:{severity_val}%;
                          background:linear-gradient(90deg,{disease_color}88,{disease_color});"></div>
                 </div>
-                <p>{t('detection.infection_label', pct=f'{infection_pct:.1f}')}</p>
+                <p>{t("detection.infection_label", pct=f"{infection_pct:.1f}")}</p>
             """,
                 unsafe_allow_html=True,
             )
 
             st.markdown(
                 f"""
-                <div class="info-box {'green' if is_healthy else 'orange' if severity_result['severity'] == 'Mild' else 'red'}">
-                    <strong>{t('detection.risk_level', level=severity_result['risk_level'])}</strong><br>
-                    <strong>{t('detection.yield_impact', pct=yield_impact)}</strong><br>
-                    <strong>{t('detection.treatment_urgency', urgency=severity_analyzer.get_treatment_urgency(severity_result['severity']))}</strong>
+                <div class="info-box {"green" if is_healthy else "orange" if severity_result["severity"] == "Mild" else "red"}">
+                    <strong>{t("detection.risk_level", level=severity_result["risk_level"])}</strong><br>
+                    <strong>{t("detection.yield_impact", pct=yield_impact)}</strong><br>
+                    <strong>{t("detection.treatment_urgency", urgency=severity_analyzer.get_treatment_urgency(severity_result["severity"]))}</strong>
                 </div>
             """,
                 unsafe_allow_html=True,
@@ -322,8 +322,8 @@ def render_prediction_results(result, image_np, models):
                 st.markdown(
                     f"""
                     <div style="margin: 0.5rem 0; padding: 0.5rem; background: #e8f5e9; border-radius: 8px;">
-                        {t('detection.identified_crop', crop=crop_name)}
-                        {t('detection.identified_confidence', pct=f'{crop_confidence * 100:.1f}')}
+                        {t("detection.identified_crop", crop=crop_name)}
+                        {t("detection.identified_confidence", pct=f"{crop_confidence * 100:.1f}")}
                     </div>
                 """,
                     unsafe_allow_html=True,
@@ -341,8 +341,8 @@ def render_prediction_results(result, image_np, models):
                             f"""
                             <div style="margin:0.15rem 0;">
                                 <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
-                                    <span>{cp['crop']}</span>
-                                    <span>{cp['score']:.1f}</span>
+                                    <span>{cp["crop"]}</span>
+                                    <span>{cp["score"]:.1f}</span>
                                 </div>
                                 <div class="severity-meter">
                                     <div class="severity-meter-fill" style="width:{bar_w}%;background:var(--primary);"></div>
@@ -372,7 +372,7 @@ def render_prediction_results(result, image_np, models):
                         f"""
                         <div style="margin:0.2rem 0;">
                             <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
-                                <span><strong>{pred['disease_name']}</strong></span>
+                                <span><strong>{pred["disease_name"]}</strong></span>
                                 <span><strong>{pct:.1f}%</strong></span>
                             </div>
                             <div class="severity-meter">
@@ -416,13 +416,13 @@ def render_prediction_results(result, image_np, models):
             st.markdown(
                 f"""
                 <div class="dashboard-card">
-                    <p><strong>{t('detection.description')}</strong> {disease_info.get('description', 'N/A')[:300]}...</p>
-                    <p style="margin-top: 0.5rem;"><strong>{t('detection.symptoms')}</strong></p>
+                    <p><strong>{t("detection.description")}</strong> {disease_info.get("description", "N/A")[:300]}...</p>
+                    <p style="margin-top: 0.5rem;"><strong>{t("detection.symptoms")}</strong></p>
                     <ul style="font-size: 0.9rem;">
-                        {''.join(f'<li>{s}</li>' for s in disease_info.get('symptoms', [])[:4])}
+                        {"".join(f"<li>{s}</li>" for s in disease_info.get("symptoms", [])[:4])}
                     </ul>
-                    <p style="margin-top: 0.5rem;"><strong>{t('detection.favorable_conditions')}</strong><br>
-                        {disease_info.get('favorable_conditions', 'N/A')}</p>
+                    <p style="margin-top: 0.5rem;"><strong>{t("detection.favorable_conditions")}</strong><br>
+                        {disease_info.get("favorable_conditions", "N/A")}</p>
                 </div>
             """,
                 unsafe_allow_html=True,
@@ -466,8 +466,8 @@ def render_prediction_results(result, image_np, models):
         st.markdown(
             f"""
             <div style="text-align: center; margin-top: 1rem;">
-                <p><strong>{t('detection.infected_area_label')}</strong> {infection_pct:.1f}% |
-                <strong>{t('detection.severity_label_plain')}:</strong> {severity_result['severity']}</p>
+                <p><strong>{t("detection.infected_area_label")}</strong> {infection_pct:.1f}% |
+                <strong>{t("detection.severity_label_plain")}:</strong> {severity_result["severity"]}</p>
             </div>
         """,
             unsafe_allow_html=True,
@@ -558,8 +558,8 @@ def render_prediction_results(result, image_np, models):
 
         st.markdown(
             f"""
-            <div class="info-box {'orange' if recs.get('urgency', '').startswith('Medium') or recs.get('urgency', '').startswith('High') else 'green'}">
-                <strong>{t('detection.treatment_urgency_label', urgency=recs.get('urgency', 'Normal'))}</strong>
+            <div class="info-box {"orange" if recs.get("urgency", "").startswith("Medium") or recs.get("urgency", "").startswith("High") else "green"}">
+                <strong>{t("detection.treatment_urgency_label", urgency=recs.get("urgency", "Normal"))}</strong>
             </div>
         """,
             unsafe_allow_html=True,
@@ -637,9 +637,7 @@ def render_prediction_results(result, image_np, models):
     # Report tab (was tab5 originally, now moved here)
     # We keep the report generation as a separate section
     st.markdown("---")
-    st.markdown(
-        f"<h4>{t('detection.generate_report')}</h4>", unsafe_allow_html=True
-    )
+    st.markdown(f"<h4>{t('detection.generate_report')}</h4>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -661,9 +659,7 @@ def render_prediction_results(result, image_np, models):
                 pdf_gen = PDFGenerator()
                 report_id = f"RPT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 pil_img = Image.fromarray(
-                    cv2.cvtColor(
-                        cv2.resize(image_np, (224, 224)), cv2.COLOR_BGR2RGB
-                    )
+                    cv2.cvtColor(cv2.resize(image_np, (224, 224)), cv2.COLOR_BGR2RGB)
                     if len(image_np.shape) == 3 and image_np.shape[-1] == 3
                     else image_np
                 )
@@ -830,12 +826,12 @@ def main():
                         f"""
                         <div style="margin: 0.2rem 0;">
                             <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                                <span>{_cp['crop']}</span>
-                                <span>{_cp['pct']:.1f}%</span>
+                                <span>{_cp["crop"]}</span>
+                                <span>{_cp["pct"]:.1f}%</span>
                             </div>
                             <div class="severity-meter">
                                 <div class="severity-meter-fill" style="width: {bar_w}%;
-                                     background: {'#2e7d32' if _cp['crop'] == crop_pred['crop_name'] else '#888'};"></div>
+                                     background: {"#2e7d32" if _cp["crop"] == crop_pred["crop_name"] else "#888"};"></div>
                             </div>
                         </div>
                     """,
@@ -890,9 +886,7 @@ def main():
                         else:
                             st.error(t("detection.error_prediction"))
                     except Exception as e:
-                        st.error(
-                            t("detection.error_detection", error=str(e))
-                        )
+                        st.error(t("detection.error_detection", error=str(e)))
                         import traceback
 
                         st.error(traceback.format_exc())

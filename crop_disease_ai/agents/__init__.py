@@ -1,4 +1,4 @@
-﻿from .chat_agent import ChatAgent
+from .chat_agent import ChatAgent
 from .disease_agent import DiseaseAgent
 from .memory_agent import MemoryAgent
 from .treatment_agent import TreatmentAgent

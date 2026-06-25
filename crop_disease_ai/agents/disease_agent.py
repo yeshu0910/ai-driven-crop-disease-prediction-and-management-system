@@ -1,4 +1,4 @@
-﻿# Disease Agent - ADK Agent for disease prediction
+# Disease Agent - ADK Agent for disease prediction
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -15,12 +15,19 @@ class DiseaseAgent(Agent):
         self.tools = [FunctionTool(predict_disease_tool)]
         self.memory = FarmerMemory()
 
-    def predict(self, image_array: np.ndarray, crop_hint: Optional[str] = None) -> Dict[str, Any]:
+    def predict(
+        self, image_array: np.ndarray, crop_hint: Optional[str] = None
+    ) -> Dict[str, Any]:
         result = predict_disease_tool(image_array, crop_hint)
         return result
 
-    def predict_and_store(self, image_array: np.ndarray, farmer_name: str,
-                         location: str, crop_hint: Optional[str] = None) -> Dict[str, Any]:
+    def predict_and_store(
+        self,
+        image_array: np.ndarray,
+        farmer_name: str,
+        location: str,
+        crop_hint: Optional[str] = None,
+    ) -> Dict[str, Any]:
         result = self.predict(image_array, crop_hint)
         if result.get("success"):
             self.memory.add_record(
@@ -28,6 +35,6 @@ class DiseaseAgent(Agent):
                 location=location,
                 crop_name=result.get("crop_name", "Unknown"),
                 disease_name=result.get("disease_name", "Unknown"),
-                confidence=result.get("confidence", 0.0)
+                confidence=result.get("confidence", 0.0),
             )
         return result

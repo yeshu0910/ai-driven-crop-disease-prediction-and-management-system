@@ -1,10 +1,12 @@
-﻿# Farmer memory storage class
+# Farmer memory storage class
 import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-AGENT_MEMORY_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "agent_memory.json"
+AGENT_MEMORY_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "agent_memory.json"
+)
 
 
 class FarmerMemory:
@@ -24,8 +26,15 @@ class FarmerMemory:
         with open(AGENT_MEMORY_PATH, "w") as f:
             json.dump(records, f, indent=2)
 
-    def add_record(self, farmer_name: str, location: str, crop_name: str,
-                   disease_name: str, confidence: float, **kwargs) -> None:
+    def add_record(
+        self,
+        farmer_name: str,
+        location: str,
+        crop_name: str,
+        disease_name: str,
+        confidence: float,
+        **kwargs,
+    ) -> None:
         record = {
             "farmer_name": farmer_name,
             "location": location,
@@ -39,7 +48,9 @@ class FarmerMemory:
         records.append(record)
         self._save(records)
 
-    def get_history(self, farmer_name: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_history(
+        self, farmer_name: Optional[str] = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
         records = self._load()
         if farmer_name:
             records = [r for r in records if r.get("farmer_name") == farmer_name]
@@ -49,6 +60,14 @@ class FarmerMemory:
         records = self.get_history(farmer_name)
         if not records:
             return {"total_scans": 0, "diseases_found": 0, "healthy_scans": 0}
-        diseases = sum(1 for r in records if "healthy" not in r.get("disease_name", "").lower())
-        healthy = sum(1 for r in records if "healthy" in r.get("disease_name", "").lower())
-        return {"total_scans": len(records), "diseases_found": diseases, "healthy_scans": healthy}
+        diseases = sum(
+            1 for r in records if "healthy" not in r.get("disease_name", "").lower()
+        )
+        healthy = sum(
+            1 for r in records if "healthy" in r.get("disease_name", "").lower()
+        )
+        return {
+            "total_scans": len(records),
+            "diseases_found": diseases,
+            "healthy_scans": healthy,
+        }
