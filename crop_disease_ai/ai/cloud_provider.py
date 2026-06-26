@@ -51,7 +51,9 @@ class CloudProvider:
             )
 
         if provider == AIProvider.ANTHROPIC:
-            payload, url, headers = self._anthropic_payload(prompt, config, system_prompt)
+            payload, url, headers = self._anthropic_payload(
+                prompt, config, system_prompt
+            )
             data = self._request_json("POST", url, headers, payload, config)
             return self._parse_anthropic_response(data)
 
@@ -61,11 +63,15 @@ class CloudProvider:
             return self._parse_gemini_response(data)
 
         if provider == AIProvider.HUGGINGFACE:
-            payload, url, headers = self._huggingface_payload(prompt, config, system_prompt)
+            payload, url, headers = self._huggingface_payload(
+                prompt, config, system_prompt
+            )
             data = self._request_json("POST", url, headers, payload, config)
             return self._parse_huggingface_response(data)
 
-        payload, url, headers = self._openai_compatible_payload(prompt, config, system_prompt)
+        payload, url, headers = self._openai_compatible_payload(
+            prompt, config, system_prompt
+        )
         data = self._request_json("POST", url, headers, payload, config)
         return self._parse_openai_response(data)
 
@@ -78,10 +84,14 @@ class CloudProvider:
     ) -> str:
         provider = coerce_provider(config.provider)
         if image_paths:
-            raise CloudProviderError("Image input is not supported by the current text provider interface.")
+            raise CloudProviderError(
+                "Image input is not supported by the current text provider interface."
+            )
 
         if provider == AIProvider.ANTHROPIC:
-            payload, url, headers = self._anthropic_payload(prompt, config, system_prompt)
+            payload, url, headers = self._anthropic_payload(
+                prompt, config, system_prompt
+            )
             data = await self._request_json_async("POST", url, headers, payload, config)
             return self._parse_anthropic_response(data)
 
@@ -91,11 +101,15 @@ class CloudProvider:
             return self._parse_gemini_response(data)
 
         if provider == AIProvider.HUGGINGFACE:
-            payload, url, headers = self._huggingface_payload(prompt, config, system_prompt)
+            payload, url, headers = self._huggingface_payload(
+                prompt, config, system_prompt
+            )
             data = await self._request_json_async("POST", url, headers, payload, config)
             return self._parse_huggingface_response(data)
 
-        payload, url, headers = self._openai_compatible_payload(prompt, config, system_prompt)
+        payload, url, headers = self._openai_compatible_payload(
+            prompt, config, system_prompt
+        )
         data = await self._request_json_async("POST", url, headers, payload, config)
         return self._parse_openai_response(data)
 
@@ -108,7 +122,9 @@ class CloudProvider:
     ) -> Iterator[str]:
         provider = coerce_provider(config.provider)
         if image_paths:
-            raise CloudProviderError("Image input is not supported by the current text provider interface.")
+            raise CloudProviderError(
+                "Image input is not supported by the current text provider interface."
+            )
 
         if provider == AIProvider.ANTHROPIC:
             yield self.generate(prompt, config, system_prompt)
@@ -122,7 +138,9 @@ class CloudProvider:
             yield self.generate(prompt, config, system_prompt)
             return
 
-        payload, url, headers = self._openai_compatible_payload(prompt, config, system_prompt, stream=True)
+        payload, url, headers = self._openai_compatible_payload(
+            prompt, config, system_prompt, stream=True
+        )
         try:
             with self._get_client(config).stream(
                 "POST",
@@ -144,7 +162,9 @@ class CloudProvider:
                     if delta:
                         yield delta
         except (httpx.HTTPError, ValueError) as exc:
-            raise CloudProviderError(f"Cloud streaming request failed for provider {provider.value}.") from exc
+            raise CloudProviderError(
+                f"Cloud streaming request failed for provider {provider.value}."
+            ) from exc
 
     def close(self) -> None:
         if self._owns_client and self._client is not None:
@@ -271,7 +291,9 @@ class CloudProvider:
                 if attempt >= config.retries:
                     break
         provider = coerce_provider(config.provider)
-        raise CloudProviderError(f"Cloud provider request failed for {provider.value}.") from last_error
+        raise CloudProviderError(
+            f"Cloud provider request failed for {provider.value}."
+        ) from last_error
 
     async def _request_json_async(
         self,
@@ -303,7 +325,9 @@ class CloudProvider:
                 if attempt >= config.retries:
                     break
         provider = coerce_provider(config.provider)
-        raise CloudProviderError(f"Cloud async provider request failed for {provider.value}.") from last_error
+        raise CloudProviderError(
+            f"Cloud async provider request failed for {provider.value}."
+        ) from last_error
 
     def _get_client(self, config: ProviderConfig) -> httpx.Client:
         if self._client is not None:
@@ -339,7 +363,9 @@ class CloudProvider:
         try:
             return str(data["choices"][0]["message"]["content"])
         except (KeyError, IndexError, TypeError) as exc:
-            raise CloudProviderError("OpenAI-compatible response did not contain assistant text.") from exc
+            raise CloudProviderError(
+                "OpenAI-compatible response did not contain assistant text."
+            ) from exc
 
     @staticmethod
     def _parse_anthropic_response(data: Mapping[str, Any]) -> str:
@@ -351,16 +377,22 @@ class CloudProvider:
                     return str(first["text"])
             return str(content)
         except (KeyError, TypeError) as exc:
-            raise CloudProviderError("Anthropic response did not contain text.") from exc
+            raise CloudProviderError(
+                "Anthropic response did not contain text."
+            ) from exc
 
     @staticmethod
     def _parse_gemini_response(data: Mapping[str, Any]) -> str:
         try:
             parts = data["candidates"][0]["content"]["parts"]
-            texts = [str(part.get("text", "")) for part in parts if isinstance(part, Mapping)]
+            texts = [
+                str(part.get("text", "")) for part in parts if isinstance(part, Mapping)
+            ]
             return "".join(texts)
         except (KeyError, IndexError, TypeError) as exc:
-            raise CloudProviderError("Gemini response did not contain generated text.") from exc
+            raise CloudProviderError(
+                "Gemini response did not contain generated text."
+            ) from exc
 
     @staticmethod
     def _parse_huggingface_response(data: Mapping[str, Any] | list[Any]) -> str:
@@ -369,7 +401,9 @@ class CloudProvider:
                 raise CloudProviderError("Hugging Face response was empty.")
             first = data[0]
             if isinstance(first, Mapping):
-                return str(first.get("generated_text") or first.get("summary_text") or "")
+                return str(
+                    first.get("generated_text") or first.get("summary_text") or ""
+                )
             return str(first)
         return str(data.get("generated_text") or data.get("summary_text") or "")
 

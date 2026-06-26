@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-indices = np.load('models/class_indices.npy', allow_pickle=True).item()
+indices = np.load("models/class_indices.npy", allow_pickle=True).item()
 print(f"Total classes in model: {len(indices)}")
 print()
 
@@ -29,7 +29,7 @@ for key, val in sorted(DISEASE_CLASSES.items()):
     status = "IN_MODEL" if in_model else "MISSING"
     if not in_model:
         missing_from_model.append(key)
-    n = val.encode('ascii', 'replace').decode()
+    n = val.encode("ascii", "replace").decode()
     print(f"  [{status}] {n:45s} ({key})")
 
 print("\n--- MODEL CLASS INDICES ---")
@@ -43,7 +43,7 @@ for idx in sorted(class_names.keys()):
 print("\n--- SUMMARY: MISSING FROM MODEL ---")
 if missing_from_model:
     for dk in missing_from_model:
-        n = DISEASE_CLASSES[dk].encode('ascii', 'replace').decode()
+        n = DISEASE_CLASSES[dk].encode("ascii", "replace").decode()
         print(f"  [MISS] {n:45s} ({dk})")
 else:
     print("  All classes present.")
@@ -60,23 +60,41 @@ print("\n--- CROP COVERAGE DETAIL ---")
 for crop in sorted(SUPPORTED_CROPS):
     model_count = len([idx for idx, k in class_names.items() if k.startswith(crop)])
     config_count = len([v for k, v in DISEASE_CLASSES.items() if v.startswith(crop)])
-    status = "OK" if model_count == config_count else f"MISMATCH ({model_count} vs {config_count})"
+    status = (
+        "OK"
+        if model_count == config_count
+        else f"MISMATCH ({model_count} vs {config_count})"
+    )
     print(f"  {crop:15s} model={model_count} config={config_count} {status}")
 
 print("\n--- CRITICAL: RICE CHECK ---")
 rice_config = [v for k, v in DISEASE_CLASSES.items() if v.startswith("Rice")]
-rice_model_keys = [class_names[idx] for idx in sorted(class_names.keys()) if class_names[idx].startswith("Rice")]
+rice_model_keys = [
+    class_names[idx]
+    for idx in sorted(class_names.keys())
+    if class_names[idx].startswith("Rice")
+]
 print(f"  Rice in config:          {rice_config}")
 print(f"  Rice in model indices:   {rice_model_keys}")
 if not rice_model_keys:
     print("  *** ROOT CAUSE: RICE IS NOT IN THE MODEL ***")
-    print(f"  Model only has {len(indices)} classes, Rice starts at index 68 in DISEASE_CLASSES")
-    print(f"  The dummy training only used the first {len(indices)} DISEASE_CLASSES keys")
-    print("  Rice is at positions 68-71 in DISEASE_CLASSES dict (Python 3.7+ preserves order)")
+    print(
+        f"  Model only has {len(indices)} classes, Rice starts at index 68 in DISEASE_CLASSES"
+    )
+    print(
+        f"  The dummy training only used the first {len(indices)} DISEASE_CLASSES keys"
+    )
+    print(
+        "  Rice is at positions 68-71 in DISEASE_CLASSES dict (Python 3.7+ preserves order)"
+    )
 
 print("\n--- CRITICAL: CHILI CHECK ---")
 chili_config = [v for k, v in DISEASE_CLASSES.items() if v.startswith("Chili")]
-chili_model_keys = [class_names[idx] for idx in sorted(class_names.keys()) if class_names[idx].startswith("Chili")]
+chili_model_keys = [
+    class_names[idx]
+    for idx in sorted(class_names.keys())
+    if class_names[idx].startswith("Chili")
+]
 print(f"  Chili in config:        {chili_config}")
 print(f"  Chili in model indices: {chili_model_keys}")
 
@@ -85,18 +103,22 @@ print(f"  Model output size:   {len(indices)}")
 print(f"  DISEASE_CLASSES size: {len(DISEASE_CLASSES)}")
 if len(indices) != len(DISEASE_CLASSES):
     print(f"  *** MISMATCH of {len(DISEASE_CLASSES) - len(indices)} classes ***")
-    print(f"  Model was trained on only {len(indices)} classes but config defines {len(DISEASE_CLASSES)}")
+    print(
+        f"  Model was trained on only {len(indices)} classes but config defines {len(DISEASE_CLASSES)}"
+    )
 else:
     print("  Sizes match.")
 
 print("\n--- MODEL QUALITY CHECK ---")
 import tensorflow as tf  # noqa: E402
 
-model = tf.keras.models.load_model('models/plant_disease_model.h5')
+model = tf.keras.models.load_model("models/plant_disease_model.h5")
 dummy_data = np.random.rand(10, 224, 224, 3)
 dummy_labels = np.eye(57)[:10]
 loss, acc = model.evaluate(dummy_data, dummy_labels, verbose=0)
-print(f"  Random-sample accuracy: {acc*100:.1f}% (expected ~1.8% for 57-class random)")
+print(
+    f"  Random-sample accuracy: {acc * 100:.1f}% (expected ~1.8% for 57-class random)"
+)
 if acc < 0.1:
     print("  *** Model appears to have random/dummy weights ***")
     print("  Model was likely created via create_dummy_model() in train_model.py")
@@ -163,9 +185,9 @@ audit = ModelHandler.audit_dataset()
 print(f"  Total classes defined: {audit['total_classes']}")
 print(f"  Total crops supported: {audit['total_crops']}")
 print()
-for crop, info in sorted(audit['crops'].items()):
-    diseases = [d['display_name'] for d in info['entries'] if not d['is_healthy']]
-    healthy = [d['display_name'] for d in info['entries'] if d['is_healthy']]
+for crop, info in sorted(audit["crops"].items()):
+    diseases = [d["display_name"] for d in info["entries"] if not d["is_healthy"]]
+    healthy = [d["display_name"] for d in info["entries"] if d["is_healthy"]]
     print(f"  {crop}:")
     print(f"    Diseases ({len(diseases)}): {', '.join(diseases)}")
     print(f"    Healthy: {', '.join(healthy) if healthy else 'N/A'}")

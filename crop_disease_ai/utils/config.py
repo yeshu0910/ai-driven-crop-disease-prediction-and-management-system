@@ -35,17 +35,28 @@ CONFIDENCE_THRESHOLD = 0.85
 CROP_CONFIDENCE_THRESHOLD = 0.95
 
 SUPPORTED_CROPS = [
-    "Tomato", "Potato", "Rice", "Wheat", "Corn",
-    "Cotton", "Soybean", "Sugarcane", "Groundnut",
-    "Sunflower", "Banana", "Mango", "Grapes",
-    "Apple", "Chili"
+    "Tomato",
+    "Potato",
+    "Rice",
+    "Wheat",
+    "Corn",
+    "Cotton",
+    "Soybean",
+    "Sugarcane",
+    "Groundnut",
+    "Sunflower",
+    "Banana",
+    "Mango",
+    "Grapes",
+    "Apple",
+    "Chili",
 ]
 
 SEVERITY_LEVELS = {
     "Healthy": {"color": "#2DD4BF", "icon": "✅", "risk": "None"},
     "Mild": {"color": "#FB923C", "icon": "⚠️", "risk": "Low"},
     "Moderate": {"color": "#A78BFA", "icon": "🔶", "risk": "Medium"},
-    "Severe": {"color": "#EC4899", "icon": "🔴", "risk": "High"}
+    "Severe": {"color": "#EC4899", "icon": "🔴", "risk": "High"},
 }
 
 PRIMARY_COLOR = "#5E6AD2"
@@ -111,5 +122,5 @@ DISEASE_CLASSES = {
     "Apple___healthy": "Apple Healthy",
     "Chili___Leaf_curl": "Chili Leaf Curl",
     "Chili___Bacterial_spot": "Chili Bacterial Spot",
-    "Chili___healthy": "Chili Healthy"
+    "Chili___healthy": "Chili Healthy",
 }

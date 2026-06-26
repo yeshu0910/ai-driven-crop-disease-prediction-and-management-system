@@ -131,12 +131,16 @@ def test_provider_manager_routes_to_local_ollama() -> None:
     cloud = FakeCloudProvider()
     manager = ProviderManager(local_provider=local, cloud_provider=cloud)
 
-    response = manager.generate_response("hello", ProviderConfig(provider=AIProvider.OLLAMA, mode=AIProviderMode.LOCAL))
+    response = manager.generate_response(
+        "hello", ProviderConfig(provider=AIProvider.OLLAMA, mode=AIProviderMode.LOCAL)
+    )
 
     assert isinstance(response, AIResponse)
     assert response.text == "local:hello"
     assert response.provider == AIProvider.OLLAMA.value
-    assert local.calls == [("hello", ProviderConfig(provider=AIProvider.OLLAMA, mode=AIProviderMode.LOCAL))]
+    assert local.calls == [
+        ("hello", ProviderConfig(provider=AIProvider.OLLAMA, mode=AIProviderMode.LOCAL))
+    ]
     assert cloud.calls == []
 
 

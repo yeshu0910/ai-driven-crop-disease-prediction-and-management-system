@@ -18,8 +18,9 @@ try:
 except ImportError:  # pragma: no cover - optional at runtime in restricted environments
     _fernet_module = None
 
-_Fernet: type[Any] | None = _fernet_module.Fernet if _fernet_module is not None else None
-
+_Fernet: type[Any] | None = (
+    _fernet_module.Fernet if _fernet_module is not None else None
+)
 
 
 class AIProvider(str, Enum):
@@ -249,18 +250,33 @@ def validate_api_key(provider: AIProvider | str, api_key: str) -> tuple[bool, st
 
     if provider_value == AIProvider.ANTHROPIC and not stripped.startswith("sk-ant-"):
         return False, "Anthropic API keys usually start with sk-ant-."
-    if provider_value == AIProvider.GEMINI and not re.match(r"^[A-Za-z0-9_-]{20,}$", stripped):
-        return False, "Gemini API keys usually contain letters, numbers, underscores, or hyphens."
-    if provider_value == AIProvider.OPENAI and not stripped.startswith(("sk-", "svproj-")):
+    if provider_value == AIProvider.GEMINI and not re.match(
+        r"^[A-Za-z0-9_-]{20,}$", stripped
+    ):
+        return (
+            False,
+            "Gemini API keys usually contain letters, numbers, underscores, or hyphens.",
+        )
+    if provider_value == AIProvider.OPENAI and not stripped.startswith(
+        ("sk-", "svproj-")
+    ):
         return False, "OpenAI API keys usually start with sk- or svproj-."
     return True, "API key format looks valid."
 
 
 def provider_from_env() -> ProviderConfig:
     provider = coerce_provider(os.getenv("AI_PROVIDER", "ollama"))
-    mode = coerce_mode(os.getenv("AI_PROVIDER_MODE", _default_mode_for_provider(provider)))
-    model = os.getenv("AI_MODEL") or os.getenv(PROVIDER_MODEL_ENV_KEYS.get(provider, "AI_MODEL"))
-    base_url = os.getenv("AI_BASE_URL") or os.getenv("OLLAMA_BASE_URL") or get_default_base_url(provider)
+    mode = coerce_mode(
+        os.getenv("AI_PROVIDER_MODE", _default_mode_for_provider(provider))
+    )
+    model = os.getenv("AI_MODEL") or os.getenv(
+        PROVIDER_MODEL_ENV_KEYS.get(provider, "AI_MODEL")
+    )
+    base_url = (
+        os.getenv("AI_BASE_URL")
+        or os.getenv("OLLAMA_BASE_URL")
+        or get_default_base_url(provider)
+    )
     api_key = os.getenv("AI_API_KEY") or os.getenv(
         PROVIDER_ENV_KEYS.get(provider, "AI_API_KEY"), ""
     )
@@ -286,11 +302,17 @@ def provider_from_env() -> ProviderConfig:
 
 class EncryptedProviderConfigStore:
     def __init__(self, path: str | Path | None = None) -> None:
-        self.path = Path(path) if path else Path.home() / ".crop_disease_ai" / "provider_config.enc"
+        self.path = (
+            Path(path)
+            if path
+            else Path.home() / ".crop_disease_ai" / "provider_config.enc"
+        )
 
     def save(self, config: ProviderConfig, encryption_key: str) -> None:
         fernet = self._get_fernet(encryption_key)
-        payload = json.dumps(config.to_dict(include_secret=True), sort_keys=True).encode("utf-8")
+        payload = json.dumps(
+            config.to_dict(include_secret=True), sort_keys=True
+        ).encode("utf-8")
         encrypted = fernet.encrypt(payload)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_bytes(encrypted)
@@ -311,7 +333,9 @@ class EncryptedProviderConfigStore:
     @staticmethod
     def _get_fernet(encryption_key: str) -> Any:
         if _Fernet is None:
-            raise RuntimeError("cryptography is required for encrypted provider config storage.")
+            raise RuntimeError(
+                "cryptography is required for encrypted provider config storage."
+            )
         key_material = encryption_key.strip().encode("utf-8")
         digest = hashlib.sha256(key_material).digest()
         fernet_key = base64.urlsafe_b64encode(digest)
@@ -319,7 +343,9 @@ class EncryptedProviderConfigStore:
 
 
 def _default_mode_for_provider(provider: AIProvider) -> AIProviderMode:
-    return AIProviderMode.LOCAL if provider == AIProvider.OLLAMA else AIProviderMode.CLOUD
+    return (
+        AIProviderMode.LOCAL if provider == AIProvider.OLLAMA else AIProviderMode.CLOUD
+    )
 
 
 def _default_model_for_provider(provider: AIProvider) -> str:
@@ -330,7 +356,9 @@ def _normalize_key(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
 
 
-def _bounded_float(value: object, minimum: float, maximum: float, default: float) -> float:
+def _bounded_float(
+    value: object, minimum: float, maximum: float, default: float
+) -> float:
     try:
         parsed = float(value)  # type: ignore[arg-type]
     except (TypeError, ValueError):

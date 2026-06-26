@@ -62,7 +62,9 @@ class OllamaLocalProvider:
             response.raise_for_status()
             data = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            raise OllamaProviderError(f"Ollama request failed for model {config.model}.") from exc
+            raise OllamaProviderError(
+                f"Ollama request failed for model {config.model}."
+            ) from exc
 
         return str(data.get("response") or "")
 
@@ -74,7 +76,9 @@ class OllamaLocalProvider:
         image_paths: Sequence[str] | None = None,
     ) -> str:
         if image_paths:
-            raise OllamaProviderError("Ollama /api/generate does not accept image_paths; use a vision model through /api/chat in a future provider.")
+            raise OllamaProviderError(
+                "Ollama /api/generate does not accept image_paths; use a vision model through /api/chat in a future provider."
+            )
 
         payload = {
             "model": config.model,
@@ -96,7 +100,9 @@ class OllamaLocalProvider:
             response.raise_for_status()
             data = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            raise OllamaProviderError(f"Ollama async request failed for model {config.model}.") from exc
+            raise OllamaProviderError(
+                f"Ollama async request failed for model {config.model}."
+            ) from exc
 
         return str(data.get("response") or "")
 
@@ -108,7 +114,9 @@ class OllamaLocalProvider:
         image_paths: Sequence[str] | None = None,
     ) -> Iterator[str]:
         if image_paths:
-            raise OllamaProviderError("Ollama /api/generate does not accept image_paths; use a vision model through /api/chat in a future provider.")
+            raise OllamaProviderError(
+                "Ollama /api/generate does not accept image_paths; use a vision model through /api/chat in a future provider."
+            )
 
         payload = {
             "model": config.model,
@@ -138,7 +146,9 @@ class OllamaLocalProvider:
                     if event.get("done"):
                         break
         except (httpx.HTTPError, ValueError) as exc:
-            raise OllamaProviderError(f"Ollama streaming request failed for model {config.model}.") from exc
+            raise OllamaProviderError(
+                f"Ollama streaming request failed for model {config.model}."
+            ) from exc
 
     def list_models(self) -> list[str]:
         try:

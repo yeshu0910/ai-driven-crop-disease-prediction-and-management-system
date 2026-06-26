@@ -4,7 +4,13 @@ from collections.abc import Iterator, Sequence
 from typing import Protocol
 
 from ai.local_provider import OllamaLocalProvider
-from ai.settings import AIProvider, AIProviderMode, ProviderConfig, coerce_mode, coerce_provider
+from ai.settings import (
+    AIProvider,
+    AIProviderMode,
+    ProviderConfig,
+    coerce_mode,
+    coerce_provider,
+)
 
 
 class TextGenerator(Protocol):
@@ -14,8 +20,7 @@ class TextGenerator(Protocol):
         config: ProviderConfig,
         system_prompt: str = "",
         image_paths: Sequence[str] | None = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     async def generate_async(
         self,
@@ -23,8 +28,7 @@ class TextGenerator(Protocol):
         config: ProviderConfig,
         system_prompt: str = "",
         image_paths: Sequence[str] | None = None,
-    ) -> str:
-        ...
+    ) -> str: ...
 
     def generate_stream(
         self,
@@ -32,8 +36,7 @@ class TextGenerator(Protocol):
         config: ProviderConfig,
         system_prompt: str = "",
         image_paths: Sequence[str] | None = None,
-    ) -> Iterator[str]:
-        ...
+    ) -> Iterator[str]: ...
 
 
 class ModelRouter:
@@ -69,5 +72,7 @@ class ModelRouter:
 
     def _require_cloud_provider(self, provider: AIProvider) -> TextGenerator:
         if self.cloud_provider is None:
-            raise RuntimeError(f"Cloud provider {provider.value} was requested but no cloud provider is configured.")
+            raise RuntimeError(
+                f"Cloud provider {provider.value} was requested but no cloud provider is configured."
+            )
         return self.cloud_provider

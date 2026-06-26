@@ -53,10 +53,13 @@ def test_analyze_infection_area():
 
 def test_validate_image_invalid_type():
     proc = ImageProcessor()
+
     class FakeFile:
         type = "text/plain"
+
         def getvalue(self):
             return b"test"
+
     valid, msg = proc.validate_image(FakeFile())
     assert not valid
     assert "Invalid" in msg

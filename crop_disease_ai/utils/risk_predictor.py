@@ -13,50 +13,50 @@ class RiskPredictor:
                 "optimal_temp": (22, 28),
                 "high_humidity_threshold": 75,
                 "wind_sensitivity": 0.6,
-                "rain_sensitivity": 0.7
+                "rain_sensitivity": 0.7,
             },
             "Potato": {
                 "optimal_temp": (18, 24),
                 "high_humidity_threshold": 80,
                 "wind_sensitivity": 0.5,
-                "rain_sensitivity": 0.8
+                "rain_sensitivity": 0.8,
             },
             "Rice": {
                 "optimal_temp": (24, 30),
                 "high_humidity_threshold": 85,
                 "wind_sensitivity": 0.4,
-                "rain_sensitivity": 0.6
+                "rain_sensitivity": 0.6,
             },
             "Wheat": {
                 "optimal_temp": (15, 25),
                 "high_humidity_threshold": 75,
                 "wind_sensitivity": 0.7,
-                "rain_sensitivity": 0.5
+                "rain_sensitivity": 0.5,
             },
             "Corn": {
                 "optimal_temp": (20, 28),
                 "high_humidity_threshold": 75,
                 "wind_sensitivity": 0.5,
-                "rain_sensitivity": 0.6
+                "rain_sensitivity": 0.6,
             },
             "Cotton": {
                 "optimal_temp": (25, 32),
                 "high_humidity_threshold": 70,
                 "wind_sensitivity": 0.6,
-                "rain_sensitivity": 0.4
+                "rain_sensitivity": 0.4,
             },
             "Grapes": {
                 "optimal_temp": (20, 27),
                 "high_humidity_threshold": 75,
                 "wind_sensitivity": 0.5,
-                "rain_sensitivity": 0.7
+                "rain_sensitivity": 0.7,
             },
             "Apple": {
                 "optimal_temp": (15, 22),
                 "high_humidity_threshold": 75,
                 "wind_sensitivity": 0.5,
-                "rain_sensitivity": 0.7
-            }
+                "rain_sensitivity": 0.7,
+            },
         }
 
     def predict_7_day_risk(self, crop_name, forecast_data, current_disease=None):
@@ -67,9 +67,7 @@ class RiskPredictor:
         risk_predictions = []
 
         for day_forecast in forecasts:
-            risk = self._calculate_daily_risk(
-                crop_name, day_forecast, current_disease
-            )
+            risk = self._calculate_daily_risk(crop_name, day_forecast, current_disease)
             risk_predictions.append(risk)
 
         overall_risk = self._calculate_overall_risk(risk_predictions)
@@ -87,7 +85,7 @@ class RiskPredictor:
             ),
             "preventive_actions": self._generate_preventive_actions(
                 overall_risk, crop_name, risk_predictions
-            )
+            ),
         }
 
     def _calculate_daily_risk(self, crop_name, forecast, current_disease):
@@ -100,48 +98,58 @@ class RiskPredictor:
         risk_score = 0.0
         risk_factors = []
 
-        crop_params = self.disease_risk_params.get(crop_name, {
-            "optimal_temp": (20, 28),
-            "high_humidity_threshold": 75,
-            "wind_sensitivity": 0.5,
-            "rain_sensitivity": 0.5
-        })
+        crop_params = self.disease_risk_params.get(
+            crop_name,
+            {
+                "optimal_temp": (20, 28),
+                "high_humidity_threshold": 75,
+                "wind_sensitivity": 0.5,
+                "rain_sensitivity": 0.5,
+            },
+        )
 
         opt_temp_min, opt_temp_max = crop_params["optimal_temp"]
         if opt_temp_min <= temp <= opt_temp_max:
             risk_score += 25
-            risk_factors.append({
-                "factor": "temperature",
-                "detail": f"Temperature ({temp}°C) within optimal range for disease development"
-            })
+            risk_factors.append(
+                {
+                    "factor": "temperature",
+                    "detail": f"Temperature ({temp}°C) within optimal range for disease development",
+                }
+            )
 
         if humidity > crop_params["high_humidity_threshold"]:
             risk_score += 30
-            risk_factors.append({
-                "factor": "humidity",
-                "detail": f"Humidity ({humidity}%) exceeds safe threshold"
-            })
+            risk_factors.append(
+                {
+                    "factor": "humidity",
+                    "detail": f"Humidity ({humidity}%) exceeds safe threshold",
+                }
+            )
         elif humidity > 60:
             risk_score += 10
-            risk_factors.append({
-                "factor": "humidity",
-                "detail": f"Moderate humidity ({humidity}%)"
-            })
+            risk_factors.append(
+                {"factor": "humidity", "detail": f"Moderate humidity ({humidity}%)"}
+            )
 
         if wind_speed > 8:
             risk_score += 15 * crop_params["wind_sensitivity"]
-            risk_factors.append({
-                "factor": "wind",
-                "detail": f"Wind speed ({wind_speed} m/s) aids spore dispersal"
-            })
+            risk_factors.append(
+                {
+                    "factor": "wind",
+                    "detail": f"Wind speed ({wind_speed} m/s) aids spore dispersal",
+                }
+            )
 
         rain_indicators = ["rain", "drizzle", "thunderstorm", "shower"]
         if any(r in description.lower() for r in rain_indicators):
             risk_score += 20 * crop_params["rain_sensitivity"]
-            risk_factors.append({
-                "factor": "rain",
-                "detail": "Rain expected - creates favorable conditions for infection"
-            })
+            risk_factors.append(
+                {
+                    "factor": "rain",
+                    "detail": "Rain expected - creates favorable conditions for infection",
+                }
+            )
 
         if current_disease and "healthy" not in current_disease.lower():
             risk_score += 10
@@ -166,7 +174,7 @@ class RiskPredictor:
             "risk_score": round(risk_score, 1),
             "risk_level": risk_level,
             "risk_factors": risk_factors,
-            "suggestions": suggestions
+            "suggestions": suggestions,
         }
 
     def _get_day_suggestions(self, risk_level, risk_factors, crop_name):
@@ -211,7 +219,7 @@ class RiskPredictor:
             "risk_level": level,
             "risk_score": round(combined, 1),
             "avg_risk_score": round(avg_score, 1),
-            "max_risk_score": round(max_score, 1)
+            "max_risk_score": round(max_score, 1),
         }
 
     def _generate_preventive_actions(self, overall_risk, crop_name, predictions):
@@ -219,26 +227,32 @@ class RiskPredictor:
         risk_level = overall_risk["risk_level"]
 
         if risk_level == "High":
-            actions.extend([
-                f"URGENT: Apply protective treatment to {crop_name} immediately",
-                "Schedule daily crop monitoring",
-                "Prepare fungicide application equipment",
-                "Ensure adequate drainage around plants",
-                "Consider early harvest if crop is mature"
-            ])
+            actions.extend(
+                [
+                    f"URGENT: Apply protective treatment to {crop_name} immediately",
+                    "Schedule daily crop monitoring",
+                    "Prepare fungicide application equipment",
+                    "Ensure adequate drainage around plants",
+                    "Consider early harvest if crop is mature",
+                ]
+            )
         elif risk_level == "Medium":
-            actions.extend([
-                f"Schedule preventive fungicide application for {crop_name}",
-                "Increase monitoring frequency to every other day",
-                "Check weather forecast daily for updates",
-                "Review disease management plan"
-            ])
+            actions.extend(
+                [
+                    f"Schedule preventive fungicide application for {crop_name}",
+                    "Increase monitoring frequency to every other day",
+                    "Check weather forecast daily for updates",
+                    "Review disease management plan",
+                ]
+            )
         else:
-            actions.extend([
-                f"Continue standard monitoring for {crop_name}",
-                "Maintain good crop management practices",
-                "Review and update disease management records"
-            ])
+            actions.extend(
+                [
+                    f"Continue standard monitoring for {crop_name}",
+                    "Maintain good crop management practices",
+                    "Review and update disease management records",
+                ]
+            )
 
         high_risk_days = [p["date"] for p in predictions if p["risk_level"] == "High"]
         if high_risk_days:
@@ -255,5 +269,5 @@ class RiskPredictor:
             "generated_at": datetime.now().isoformat(),
             "high_risk_days": 0,
             "medium_risk_days": 0,
-            "preventive_actions": ["Enable weather API to get risk predictions"]
+            "preventive_actions": ["Enable weather API to get risk predictions"],
         }

@@ -24,34 +24,34 @@ class ExplainableAI:
                 disease_name, confidence, is_healthy
             ),
             "key_features": self._get_key_features(disease_name, disease_info),
-            "similar_diseases": self._get_similar_diseases(
-                disease_name, top_3
-            ),
-            "confidence_analysis": self._analyze_confidence(
-                confidence, top_3
-            ),
+            "similar_diseases": self._get_similar_diseases(disease_name, top_3),
+            "confidence_analysis": self._analyze_confidence(confidence, top_3),
             "model_interpretation": self._interpret_model_decision(
                 disease_name, confidence, top_3
-            )
+            ),
         }
         return explanation
 
     def _get_prediction_rationale(self, disease_name, confidence, is_healthy):
         reasons = []
         if is_healthy:
-            reasons.extend([
-                "Leaf appears uniformly green with no significant discoloration",
-                "No visible lesions or spots detected in the analyzed region",
-                "Texture analysis shows healthy tissue patterns",
-                "Color distribution matches healthy reference samples"
-            ])
+            reasons.extend(
+                [
+                    "Leaf appears uniformly green with no significant discoloration",
+                    "No visible lesions or spots detected in the analyzed region",
+                    "Texture analysis shows healthy tissue patterns",
+                    "Color distribution matches healthy reference samples",
+                ]
+            )
         else:
-            reasons.extend([
-                f"Abnormal color patterns detected consistent with {disease_name}",
-                "Irregular spot patterns identified on leaf surface",
-                "Textural changes detected in affected regions",
-                "Chlorophyll distribution analysis shows anomalies"
-            ])
+            reasons.extend(
+                [
+                    f"Abnormal color patterns detected consistent with {disease_name}",
+                    "Irregular spot patterns identified on leaf surface",
+                    "Textural changes detected in affected regions",
+                    "Chlorophyll distribution analysis shows anomalies",
+                ]
+            )
 
         if confidence > 0.95:
             reasons.append("High confidence - model is very certain of this diagnosis")
@@ -66,23 +66,22 @@ class ExplainableAI:
         disease_symptoms = disease_info.get("symptoms", []) if disease_info else []
         key_features = []
         for symptom in disease_symptoms[:5]:
-            key_features.append({
-                "feature": symptom,
-                "importance": "high"
-            })
+            key_features.append({"feature": symptom, "importance": "high"})
         return key_features
 
     def _get_similar_diseases(self, disease_name, top_3_predictions):
         similar = []
         for pred in top_3_predictions[1:]:
             if pred["confidence"] > 0.1:
-                similar.append({
-                    "disease_name": pred["disease_name"],
-                    "confidence": round(pred["confidence"] * 100, 2),
-                    "similarity_reason": self._get_similarity_reason(
-                        disease_name, pred["disease_name"]
-                    )
-                })
+                similar.append(
+                    {
+                        "disease_name": pred["disease_name"],
+                        "confidence": round(pred["confidence"] * 100, 2),
+                        "similarity_reason": self._get_similarity_reason(
+                            disease_name, pred["disease_name"]
+                        ),
+                    }
+                )
         return similar
 
     def _get_similarity_reason(self, primary, secondary):
@@ -101,7 +100,7 @@ class ExplainableAI:
             "overall_confidence": round(confidence * 100, 2),
             "confidence_rating": self._get_confidence_rating(confidence),
             "margin_over_second": self._calculate_margin(confidence, top_3),
-            "reliability": self._get_reliability(confidence)
+            "reliability": self._get_reliability(confidence),
         }
         return analysis
 
@@ -138,13 +137,13 @@ class ExplainableAI:
                 "Leaf color distribution patterns",
                 "Texture analysis of affected regions",
                 "Shape and pattern of detected lesions",
-                "Spatial distribution of anomalies"
+                "Spatial distribution of anomalies",
             ],
             "decision_path": f"The model analyzed the image and identified patterns "
-                            f"most consistent with {disease_name} with "
-                            f"{confidence*100:.1f}% confidence. "
-                            f"The neural network detected characteristic features "
-                            f"in the leaf tissue that match training examples of this condition."
+            f"most consistent with {disease_name} with "
+            f"{confidence * 100:.1f}% confidence. "
+            f"The neural network detected characteristic features "
+            f"in the leaf tissue that match training examples of this condition.",
         }
         return interpretation
 
@@ -161,8 +160,7 @@ class ExplainableAI:
                 return None
 
             grad_model = tf.keras.Model(
-                inputs=model.inputs,
-                outputs=[last_conv_layer.output, model.output]
+                inputs=model.inputs, outputs=[last_conv_layer.output, model.output]
             )
 
             with tf.GradientTape() as tape:
@@ -193,11 +191,11 @@ class ExplainableAI:
             if isinstance(layer, tf.keras.layers.Conv2D):
                 return layer
             if (
-                hasattr(layer, 'output')
-                and hasattr(layer.output, 'shape')
+                hasattr(layer, "output")
+                and hasattr(layer.output, "shape")
                 and len(layer.output.shape) == 4
             ):
-                    return layer
+                return layer
         return None
 
     def highlight_infected_regions(self, image_np, infection_mask):
@@ -208,9 +206,10 @@ class ExplainableAI:
 
         display_img = cv2.resize(image_np, (IMG_SIZE, IMG_SIZE))
         mask_colored = cv2.applyColorMap(
-            (infection_mask * 255).astype(np.uint8) if infection_mask.max() <= 1
+            (infection_mask * 255).astype(np.uint8)
+            if infection_mask.max() <= 1
             else infection_mask.astype(np.uint8),
-            cv2.COLORMAP_JET
+            cv2.COLORMAP_JET,
         )
         mask_colored = cv2.cvtColor(mask_colored, cv2.COLOR_BGR2RGB)
         overlay = cv2.addWeighted(display_img, 0.5, mask_colored, 0.5, 0)
