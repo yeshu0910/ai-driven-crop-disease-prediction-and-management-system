@@ -28,10 +28,32 @@ def render_header() -> None:
     st.markdown(
         """
         <div class="main-header">
-            <h1>AI Assistant</h1>
+            <h1>🤖 AI Assistant</h1>
             <p>Unified local and BYOK AI tools for crop disease support</p>
         </div>
     """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_section_card(title, icon="", content=None):
+    """Render a section card with title and content."""
+    if content is None:
+        return st.markdown(
+            f"""
+            <div class="section-card">
+                <h3>{icon} {title}</h3>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        f"""
+        <div class="section-card">
+            <h3>{icon} {title}</h3>
+            {content}
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
@@ -54,7 +76,7 @@ def get_session_config() -> ProviderConfig:
 
 
 def render_chat() -> None:
-    st.subheader("Chatbot")
+    render_section_card("Chatbot", icon="💬")
     if "ai_chat_messages" not in st.session_state:
         st.session_state["ai_chat_messages"] = [
             {
@@ -88,57 +110,68 @@ def render_chat() -> None:
 
 
 def render_summarizer() -> None:
-    st.subheader("Summarization")
-    text = st.text_area("Text to summarize", height=140)
-    if st.button("Summarize"):
+    render_section_card("Summarization", icon="📝")
+    text = st.text_area("Text to summarize", height=120, placeholder="Paste text here to summarize...")
+    if st.button("📝 Summarize", type="primary"):
         if not text.strip():
             st.warning("Enter text to summarize.")
             return
         with st.spinner("Summarizing..."):
             try:
-                st.write(summarize_text(text, get_session_config()))
+                summary = summarize_text(text, get_session_config())
+                st.markdown(
+                    f"""
+                    <div class="card" style="padding:1rem;margin-top:0.5rem;">
+                        <p style="color:var(--text-secondary);">{summary}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             except Exception as exc:
                 st.error(f"Summarization failed: {exc}")
 
 
 def render_translator() -> None:
-    st.subheader("Translation")
+    render_section_card("Translation", icon="🌐")
     col1, col2 = st.columns([1, 2])
     with col1:
         target_language = st.text_input("Target language", value="Hindi")
     with col2:
-        text = st.text_area("Text to translate", height=120)
-    if st.button("Translate"):
+        text = st.text_area("Text to translate", height=100, placeholder="Enter text to translate...")
+    if st.button("🌐 Translate", type="primary"):
         if not text.strip():
             st.warning("Enter text to translate.")
             return
         with st.spinner("Translating..."):
             try:
-                st.write(translate_text(text, target_language, get_session_config()))
+                translation = translate_text(text, target_language, get_session_config())
+                st.markdown(
+                    f"""
+                    <div class="card" style="padding:1rem;margin-top:0.5rem;">
+                        <p style="color:var(--text-secondary);">{translation}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             except Exception as exc:
                 st.error(f"Translation failed: {exc}")
 
 
 def render_image_analysis() -> None:
-    st.subheader("Image analysis explanation")
+    render_section_card("Image Analysis Explanation", icon="🖼️")
     last_result = st.session_state.get("last_result")
     if not last_result:
-        st.info("Run Disease Detection first to generate an AI image explanation.")
+        st.info("⚡ Run Disease Detection first to generate an AI image explanation.")
         return
 
     symptoms = st.multiselect(
         "Visible symptoms",
         [
-            "Leaf spots",
-            "Yellowing",
-            "Wilting",
-            "Mold growth",
-            "Necrotic lesions",
-            "Stunted growth",
-            "Fruit lesions",
+            "Leaf spots", "Yellowing", "Wilting", "Mold growth",
+            "Necrotic lesions", "Stunted growth", "Fruit lesions",
         ],
     )
-    if st.button("Generate AI image explanation"):
+    if st.button("🔍 Generate AI Explanation", type="primary"):
         with st.spinner("Analyzing diagnosis..."):
             try:
                 explanation = analyze_image_prediction(
@@ -150,7 +183,14 @@ def render_image_analysis() -> None:
                     provider_config=get_session_config(),
                 )
                 st.session_state["last_ai_image_explanation"] = explanation
-                st.write(explanation)
+                st.markdown(
+                    f"""
+                    <div class="card" style="padding:1rem;margin-top:0.5rem;">
+                        <p style="color:var(--text-secondary);">{explanation}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             except Exception as exc:
                 st.error(f"Image analysis failed: {exc}")
 
@@ -159,7 +199,7 @@ def render_image_analysis() -> None:
 
 
 def render_recommendations() -> None:
-    st.subheader("Recommendation engine")
+    render_section_card("Recommendation Engine", icon="💊")
     last_result = st.session_state.get("last_result")
     crop_name = st.text_input(
         "Crop",
@@ -171,13 +211,16 @@ def render_recommendations() -> None:
         if last_result
         else "Early Blight",
     )
-    severity = st.selectbox("Severity", ["Mild", "Moderate", "Severe"], index=1)
-    infection_percentage = st.slider("Infection percentage", 0.0, 100.0, 25.0)
+    col1, col2 = st.columns(2)
+    with col1:
+        severity = st.selectbox("Severity", ["Mild", "Moderate", "Severe"], index=1)
+    with col2:
+        infection_percentage = st.slider("Infection %", 0.0, 100.0, 25.0)
     weather = st.text_area(
         "Weather context", value="Humidity 80%, rain expected tomorrow", height=80
     )
 
-    if st.button("Generate AI recommendations"):
+    if st.button("💊 Generate AI Recommendations", type="primary"):
         base_recommendations = last_result.get("treatment", {}) if last_result else {}
         with st.spinner("Generating recommendations..."):
             try:
@@ -191,7 +234,14 @@ def render_recommendations() -> None:
                     provider_config=get_session_config(),
                 )
                 st.session_state["last_ai_recommendations"] = plan
-                st.write(plan)
+                st.markdown(
+                    f"""
+                    <div class="card" style="padding:1rem;margin-top:0.5rem;">
+                        <p style="color:var(--text-secondary);">{plan}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             except Exception as exc:
                 st.error(f"Recommendation generation failed: {exc}")
 
@@ -200,10 +250,10 @@ def render_recommendations() -> None:
 
 
 def render_report_summary() -> None:
-    st.subheader("Report generation")
+    render_section_card("Report Generation", icon="📄")
     last_result = st.session_state.get("last_result")
     if not last_result:
-        st.info("Run Disease Detection first to generate an AI report summary.")
+        st.info("⚡ Run Disease Detection first to generate an AI report summary.")
         return
 
     report_data = {
@@ -214,12 +264,19 @@ def render_report_summary() -> None:
         "risk_level": last_result.get("risk_level"),
         "infection_percentage": last_result.get("infection_percentage"),
     }
-    if st.button("Generate report summary"):
+    if st.button("📄 Generate Report Summary", type="primary"):
         with st.spinner("Generating summary..."):
             try:
                 summary = generate_report_summary(report_data, get_session_config())
                 st.session_state["last_ai_report_summary"] = summary
-                st.write(summary)
+                st.markdown(
+                    f"""
+                    <div class="card" style="padding:1rem;margin-top:0.5rem;">
+                        <p style="color:var(--text-secondary);">{summary}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             except Exception as exc:
                 st.error(f"Report summary failed: {exc}")
 
@@ -230,9 +287,19 @@ def render_report_summary() -> None:
 def main() -> None:
     load_css()
     render_header()
-    st.info(
-        "All AI features on this page call the unified provider_manager layer. Select Local (Ollama) or a BYOK provider in the sidebar."
+
+    st.markdown(
+        """
+        <div class="card" style="padding:1rem;margin-bottom:1.5rem;">
+            <p style="color:var(--text-secondary);font-size:0.9rem;">
+                🤖 All AI features on this page call the unified provider_manager layer.
+                Select <strong>Local (Ollama)</strong> or a <strong>BYOK provider</strong> in the sidebar.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
+
     render_chat()
     st.divider()
     render_summarizer()

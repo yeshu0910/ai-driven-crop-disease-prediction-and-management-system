@@ -29,7 +29,7 @@ def get_knowledge_base():
 
 def render_header():
     st.markdown(
-        '<div class="main-header"><h1>{}</h1><p>{}</p></div>'.format(
+        '<div class="page-header"><h1>{}</h1><p>{}</p></div>'.format(
             t("kb.title"), t("kb.subtitle")
         ),
         unsafe_allow_html=True,
@@ -40,7 +40,7 @@ def render_search_and_filter(kb):
     col1, col2 = st.columns([2, 1])
     with col1:
         search_query = st.text_input(
-            t("kb.search"), placeholder=t("kb.search_placeholder")
+            "🔍 " + t("kb.search"), placeholder=t("kb.search_placeholder")
         )
     with col2:
         all_diseases = kb.get_all_diseases()
@@ -48,7 +48,7 @@ def render_search_and_filter(kb):
             {name.split(" ")[0] for name in all_diseases if " " in name}
         )
         crop_filter = st.selectbox(
-            t("kb.filter_crop"), [t("kb.all_crops")] + crop_names
+            "🌾 " + t("kb.filter_crop"), [t("kb.all_crops")] + crop_names
         )
     return search_query, crop_filter
 
@@ -57,14 +57,14 @@ def render_disease_card(disease_name, info):
     severity = info.get("severity_indicators", {})
     severity_html = ""
     if severity:
-        severity_html = '<h4 style="margin-top: 1rem;">{}</h4>'.format(
+        severity_html = '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">{}</h4>'.format(
             t("kb.severity_indicators")
         )
         for level, desc in severity.items():
-            color = {"Mild": "#f1c40f", "Moderate": "#e67e22", "Severe": "#e74c3c"}.get(
+            color = {"Mild": "#22C55E", "Moderate": "#F59E0B", "Severe": "#EF4444"}.get(
                 level, "#333"
             )
-            severity_html += '<div style="display:flex;align-items:center;margin:0.25rem 0;font-size:0.85rem;"><span style="background:{};color:white;padding:0.1rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.5rem;flex-shrink:0;">{}</span><span style="color:#A1A1AA;">{}</span></div>'.format(
+            severity_html += '<div style="display:flex;align-items:center;margin:0.35rem 0;font-size:0.85rem;"><span style="background:{};color:white;padding:0.15rem 0.6rem;border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.5rem;flex-shrink:0;">{}</span><span style="color:var(--text-secondary);">{}</span></div>'.format(
                 color, level, desc
             )
 
@@ -74,48 +74,55 @@ def render_disease_card(disease_name, info):
     favorable = info.get("favorable_conditions", "N/A")
     description = info.get("description", t("kb.no_description"))
     symptoms_list = "".join(
-        '<li style="margin: 0.3rem 0;">{}</li>'.format(s)
+        '<li style="margin:0.3rem 0;color:var(--text-secondary);">{}</li>'.format(s)
         for s in info.get("symptoms", [])
     )
     causes_list = "".join(
-        '<li style="margin: 0.3rem 0;">{}</li>'.format(c)
+        '<li style="margin:0.3rem 0;color:var(--text-secondary);">{}</li>'.format(c)
         for c in info.get("causes", [])
     )
     prevention_list = "".join(
-        '<li style="margin: 0.3rem 0;">{}</li>'.format(p)
+        '<li style="margin:0.3rem 0;color:var(--text-secondary);">{}</li>'.format(p)
         for p in info.get("prevention", [])
     )
     treatment_list = "".join(
-        '<li style="margin: 0.3rem 0;">{}</li>'.format(tr)
+        '<li style="margin:0.3rem 0;color:var(--text-secondary);">{}</li>'.format(tr)
         for tr in info.get("treatment", [])
     )
 
     st.markdown(
-        '<div class="card" style="margin-bottom:1rem;padding:1.5rem;"><h3 class="gradient-text-primary" style="font-weight:700;margin-bottom:0.5rem;font-size:1.1rem;">'
+        '<div class="card" style="margin-bottom:1rem;padding:1.5rem;">'
+        '<h3 class="gradient-text-primary" style="font-weight:700;margin-bottom:0.5rem;font-size:1.1rem;">'
         + disease_name
-        + '</h3><p style="color: #A1A1AA; margin-bottom: 1rem; line-height: 1.6;">'
+        + '</h3>'
+        '<p style="color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">'
         + description
-        + '</p><h4 style="margin-top: 1rem;">'
+        + '</p>'
+        '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.symptoms")
         + "</h4><ul>"
         + symptoms_list
-        + '</ul><h4 style="margin-top: 1rem;">'
+        + '</ul>'
+        '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.causes")
         + "</h4><ul>"
         + causes_list
-        + '</ul><h4 style="margin-top: 1rem;">'
+        + '</ul>'
+        '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.prevention")
         + "</h4><ul>"
         + prevention_list
-        + '</ul><h4 style="margin-top: 1rem;">'
+        + '</ul>'
+        '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.treatment")
         + "</h4><ul>"
         + treatment_list
         + "</ul>"
         + severity_html
-        + '<p style="margin-top: 1rem;"><strong>'
+        + '<p style="margin-top:1rem;"><strong style="color:var(--text);">'
         + t("kb.affected_crops", crops=affected_text)
-        + '</strong></p><p style="margin-top: 0.5rem;"><strong>'
+        + '</strong></p>'
+        '<p style="margin-top:0.5rem;"><strong style="color:var(--text);">'
         + t("kb.favorable_conditions", conditions=favorable)
         + "</strong></p></div>",
         unsafe_allow_html=True,
@@ -140,7 +147,7 @@ def main():
         diseases = kb.get_all_diseases()
 
     st.markdown(
-        '<p style="color:#888;margin-bottom:1rem;">{}</p>'.format(
+        '<p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.85rem;">{}</p>'.format(
             t("kb.showing_records", count=len(diseases))
         ),
         unsafe_allow_html=True,
