@@ -174,7 +174,7 @@ def _generate(
             system_prompt=system_prompt,
             fallback=True,
         )
-    except Exception as exc:
+    except Exception:
         return _static_fallback(prompt, system_prompt)
     return response.text.strip()
 
