@@ -1,10 +1,17 @@
 import logging
+import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
 import tensorflow as tf
 
-from crop_disease_ai.utils.config import (
+# Add parent directory to path for Streamlit Cloud compatibility
+parent_dir = str(Path(__file__).parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from utils.config import (
     CLASS_INDICES_PATH,
     CONFIDENCE_THRESHOLD,
     CROP_CONFIDENCE_THRESHOLD,
