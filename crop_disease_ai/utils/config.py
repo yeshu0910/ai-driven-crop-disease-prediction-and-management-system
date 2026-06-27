@@ -3,9 +3,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
+# Load .env from the project root (where this file's parent lives)
 BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
 
 ASSETS_DIR = BASE_DIR / "assets"
 DATABASE_DIR = BASE_DIR / "database"
