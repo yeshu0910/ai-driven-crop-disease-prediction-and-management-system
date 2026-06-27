@@ -11,7 +11,8 @@ parent_dir = str(Path(__file__).parent.parent)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from utils.config import (
+# Import config after path manipulation (E402 expected but suppressed)
+from utils.config import (  # noqa: E402
     CLASS_INDICES_PATH,
     CONFIDENCE_THRESHOLD,
     CROP_CONFIDENCE_THRESHOLD,
