@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class WeatherAPI:
     def __init__(self):
-        self.api_key =eab13433a3d9bd205e2e9ae0e533f7a6
+        self.api_key =OPENWEATHER_API_KEY
 
     def is_configured(self):
         return bool(self.api_key)
