@@ -35,10 +35,19 @@ def render_ambient_background():
 
 # ===== REUSABLE UI HELPERS =====
 
+
 def render_card(title="", content="", icon="", style_extra=""):
     """Render a glassmorphism card with optional icon, title, and content HTML."""
-    icon_html = f'<div style="font-size:1.8rem;margin-bottom:0.75rem;">{icon}</div>' if icon else ""
-    title_html = f'<h3 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;color:var(--text);">{title}</h3>' if title else ""
+    icon_html = (
+        f'<div style="font-size:1.8rem;margin-bottom:0.75rem;">{icon}</div>'
+        if icon
+        else ""
+    )
+    title_html = (
+        f'<h3 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;color:var(--text);">{title}</h3>'
+        if title
+        else ""
+    )
     st.markdown(
         f"""
         <div class="card" style="{style_extra}">
@@ -51,7 +60,9 @@ def render_card(title="", content="", icon="", style_extra=""):
     )
 
 
-def render_metric_card(label, value, icon="", color="var(--primary)", border_color="var(--primary)"):
+def render_metric_card(
+    label, value, icon="", color="var(--primary)", border_color="var(--primary)"
+):
     """Render a compact metric card with label, value, and colored left border."""
     icon_html = f'<span style="margin-right:0.5rem;">{icon}</span>' if icon else ""
     st.markdown(
@@ -67,7 +78,11 @@ def render_metric_card(label, value, icon="", color="var(--primary)", border_col
 
 def render_section_header(title, subtitle=""):
     """Render a section header with optional subtitle."""
-    subtitle_html = f'<p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.25rem;">{subtitle}</p>' if subtitle else ""
+    subtitle_html = (
+        f'<p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.25rem;">{subtitle}</p>'
+        if subtitle
+        else ""
+    )
     st.markdown(
         f"""
         <div class="section-title">{title}</div>
@@ -174,7 +189,9 @@ def render_sidebar():
         )
 
         # Navigation
-        st.markdown('<div class="sidebar-section">Navigation</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="sidebar-section">Navigation</div>', unsafe_allow_html=True
+        )
 
         pages = [
             ("🏠", "Home", "1_Home.py"),
@@ -203,7 +220,9 @@ def render_sidebar():
 
         # Farmer Profile Section
         st.markdown("---")
-        st.markdown('<div class="sidebar-section">Farmer Profile</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="sidebar-section">Farmer Profile</div>', unsafe_allow_html=True
+        )
 
         st.session_state["farmer_name"] = st.text_input(
             "👤 " + t("sidebar.name"),
@@ -221,7 +240,9 @@ def render_sidebar():
 
         # Settings Section
         st.markdown("---")
-        st.markdown('<div class="sidebar-section">Settings</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="sidebar-section">Settings</div>', unsafe_allow_html=True
+        )
 
         langs = get_supported_languages()
         lang_labels = {"en": "English", "hi": "हिन्दी", "te": "తెలుగు"}
@@ -263,17 +284,29 @@ def render_main():
     # CTA buttons below hero
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
     with col_btn1:
-        if st.button("🔬 Detect Disease", key="hero_detect", type="primary", use_container_width=True):
+        if st.button(
+            "🔬 Detect Disease",
+            key="hero_detect",
+            type="primary",
+            use_container_width=True,
+        ):
             st.switch_page("pages/2_Detection.py")
     with col_btn2:
-        if st.button("📖 Knowledge Base", key="hero_learn", type="secondary", use_container_width=True):
+        if st.button(
+            "📖 Knowledge Base",
+            key="hero_learn",
+            type="secondary",
+            use_container_width=True,
+        ):
             st.switch_page("pages/4_Knowledge_Base.py")
     with col_btn3:
         st.markdown("")  # spacer
 
     # Stats overview
     stats = get_dashboard_stats()
-    st.markdown('<div class="section-title">📊 Platform Overview</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">📊 Platform Overview</div>', unsafe_allow_html=True
+    )
     stat_cols = st.columns(4)
     stat_items = [
         ("🔬", t("stats.total_scans"), stats["total_scans"], "#22C55E", 0),
@@ -281,7 +314,9 @@ def render_main():
         ("⚠️", t("stats.diseased"), stats["diseased_scans"], "#F59E0B", 2),
         ("🌾", t("stats.crops"), stats["total_crops"], "#3B82F6", 3),
     ]
-    for i, (col, (icon, label, value, color, delay)) in enumerate(zip(stat_cols, stat_items)):
+    for i, (col, (icon, label, value, color, delay)) in enumerate(
+        zip(stat_cols, stat_items)
+    ):
         with col:
             render_stat_card(icon, label, f"{value:,}", color=color, delay=delay)
 
@@ -289,15 +324,47 @@ def render_main():
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.markdown('<div class="section-title">⚡ Quick Actions</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-title">⚡ Quick Actions</div>', unsafe_allow_html=True
+        )
         st.markdown('<div class="feature-grid">', unsafe_allow_html=True)
         quick_actions = [
-            ("🔬", t("quick_action.detect"), t("quick_action.detect_desc"), "pages/2_Detection.py"),
-            ("📊", t("quick_action.analytics"), t("quick_action.analytics_desc"), "pages/3_Analytics.py"),
-            ("🌤️", t("quick_action.weather"), t("quick_action.weather_desc"), "pages/5_Weather.py"),
-            ("📖", t("quick_action.knowledge"), t("quick_action.knowledge_desc"), "pages/4_Knowledge_Base.py"),
-            ("📋", t("quick_action.history"), t("quick_action.history_desc"), "pages/6_History.py"),
-            ("🤖", t("quick_action.about"), t("quick_action.about_desc"), "pages/8_AI_Assistant.py"),
+            (
+                "🔬",
+                t("quick_action.detect"),
+                t("quick_action.detect_desc"),
+                "pages/2_Detection.py",
+            ),
+            (
+                "📊",
+                t("quick_action.analytics"),
+                t("quick_action.analytics_desc"),
+                "pages/3_Analytics.py",
+            ),
+            (
+                "🌤️",
+                t("quick_action.weather"),
+                t("quick_action.weather_desc"),
+                "pages/5_Weather.py",
+            ),
+            (
+                "📖",
+                t("quick_action.knowledge"),
+                t("quick_action.knowledge_desc"),
+                "pages/4_Knowledge_Base.py",
+            ),
+            (
+                "📋",
+                t("quick_action.history"),
+                t("quick_action.history_desc"),
+                "pages/6_History.py",
+            ),
+            (
+                "🤖",
+                t("quick_action.about"),
+                t("quick_action.about_desc"),
+                "pages/8_AI_Assistant.py",
+            ),
         ]
         for icon, label, desc, _page in quick_actions:
             st.markdown(

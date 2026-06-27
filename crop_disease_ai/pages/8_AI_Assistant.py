@@ -111,7 +111,9 @@ def render_chat() -> None:
 
 def render_summarizer() -> None:
     render_section_card("Summarization", icon="📝")
-    text = st.text_area("Text to summarize", height=120, placeholder="Paste text here to summarize...")
+    text = st.text_area(
+        "Text to summarize", height=120, placeholder="Paste text here to summarize..."
+    )
     if st.button("📝 Summarize", type="primary"):
         if not text.strip():
             st.warning("Enter text to summarize.")
@@ -137,14 +139,18 @@ def render_translator() -> None:
     with col1:
         target_language = st.text_input("Target language", value="Hindi")
     with col2:
-        text = st.text_area("Text to translate", height=100, placeholder="Enter text to translate...")
+        text = st.text_area(
+            "Text to translate", height=100, placeholder="Enter text to translate..."
+        )
     if st.button("🌐 Translate", type="primary"):
         if not text.strip():
             st.warning("Enter text to translate.")
             return
         with st.spinner("Translating..."):
             try:
-                translation = translate_text(text, target_language, get_session_config())
+                translation = translate_text(
+                    text, target_language, get_session_config()
+                )
                 st.markdown(
                     f"""
                     <div class="card" style="padding:1rem;margin-top:0.5rem;">
@@ -167,8 +173,13 @@ def render_image_analysis() -> None:
     symptoms = st.multiselect(
         "Visible symptoms",
         [
-            "Leaf spots", "Yellowing", "Wilting", "Mold growth",
-            "Necrotic lesions", "Stunted growth", "Fruit lesions",
+            "Leaf spots",
+            "Yellowing",
+            "Wilting",
+            "Mold growth",
+            "Necrotic lesions",
+            "Stunted growth",
+            "Fruit lesions",
         ],
     )
     if st.button("🔍 Generate AI Explanation", type="primary"):

@@ -68,12 +68,36 @@ def render_features():
     )
 
     features = [
-        {"icon": "🧠", "title": t("home.feature_ai_title"), "desc": t("home.feature_ai_desc")},
-        {"icon": "🌡️", "title": t("home.feature_weather_title"), "desc": t("home.feature_weather_desc")},
-        {"icon": "💊", "title": t("home.feature_treatment_title"), "desc": t("home.feature_treatment_desc")},
-        {"icon": "📊", "title": t("home.feature_analytics_title"), "desc": t("home.feature_analytics_desc")},
-        {"icon": "📄", "title": t("home.feature_pdf_title"), "desc": t("home.feature_pdf_desc")},
-        {"icon": "🔍", "title": t("home.feature_xai_title"), "desc": t("home.feature_xai_desc")},
+        {
+            "icon": "🧠",
+            "title": t("home.feature_ai_title"),
+            "desc": t("home.feature_ai_desc"),
+        },
+        {
+            "icon": "🌡️",
+            "title": t("home.feature_weather_title"),
+            "desc": t("home.feature_weather_desc"),
+        },
+        {
+            "icon": "💊",
+            "title": t("home.feature_treatment_title"),
+            "desc": t("home.feature_treatment_desc"),
+        },
+        {
+            "icon": "📊",
+            "title": t("home.feature_analytics_title"),
+            "desc": t("home.feature_analytics_desc"),
+        },
+        {
+            "icon": "📄",
+            "title": t("home.feature_pdf_title"),
+            "desc": t("home.feature_pdf_desc"),
+        },
+        {
+            "icon": "🔍",
+            "title": t("home.feature_xai_title"),
+            "desc": t("home.feature_xai_desc"),
+        },
     ]
     for feat in features:
         st.markdown(
@@ -91,10 +115,21 @@ def render_features():
 
 def render_supported_crops():
     crops = [
-        ("Tomato", "🍅"), ("Potato", "🥔"), ("Rice", "🌾"), ("Wheat", "🌾"),
-        ("Corn", "🌽"), ("Cotton", "🌿"), ("Soybean", "🫘"), ("Sugarcane", "🎋"),
-        ("Groundnut", "🥜"), ("Sunflower", "🌻"), ("Banana", "🍌"), ("Mango", "🥭"),
-        ("Grapes", "🍇"), ("Apple", "🍎"), ("Chili", "🌶️"),
+        ("Tomato", "🍅"),
+        ("Potato", "🥔"),
+        ("Rice", "🌾"),
+        ("Wheat", "🌾"),
+        ("Corn", "🌽"),
+        ("Cotton", "🌿"),
+        ("Soybean", "🫘"),
+        ("Sugarcane", "🎋"),
+        ("Groundnut", "🥜"),
+        ("Sunflower", "🌻"),
+        ("Banana", "🍌"),
+        ("Mango", "🥭"),
+        ("Grapes", "🍇"),
+        ("Apple", "🍎"),
+        ("Chili", "🌶️"),
     ]
 
     st.markdown(
@@ -236,7 +271,9 @@ def main():
         """,
             unsafe_allow_html=True,
         )
-        if st.button("🔬 " + t("home.btn_new_detection"), width="stretch", type="primary"):
+        if st.button(
+            "🔬 " + t("home.btn_new_detection"), width="stretch", type="primary"
+        ):
             st.switch_page("pages/2_Detection.py")
         if st.button("📊 " + t("home.btn_view_analytics"), width="stretch"):
             st.switch_page("pages/3_Analytics.py")

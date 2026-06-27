@@ -94,25 +94,25 @@ def render_disease_card(disease_name, info):
         '<div class="card" style="margin-bottom:1rem;padding:1.5rem;">'
         '<h3 class="gradient-text-primary" style="font-weight:700;margin-bottom:0.5rem;font-size:1.1rem;">'
         + disease_name
-        + '</h3>'
+        + "</h3>"
         '<p style="color:var(--text-secondary);margin-bottom:1rem;line-height:1.6;">'
         + description
-        + '</p>'
+        + "</p>"
         '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.symptoms")
         + "</h4><ul>"
         + symptoms_list
-        + '</ul>'
+        + "</ul>"
         '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.causes")
         + "</h4><ul>"
         + causes_list
-        + '</ul>'
+        + "</ul>"
         '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.prevention")
         + "</h4><ul>"
         + prevention_list
-        + '</ul>'
+        + "</ul>"
         '<h4 style="margin-top:1rem;font-size:0.9rem;font-weight:700;color:var(--text);">'
         + t("kb.treatment")
         + "</h4><ul>"
@@ -121,7 +121,7 @@ def render_disease_card(disease_name, info):
         + severity_html
         + '<p style="margin-top:1rem;"><strong style="color:var(--text);">'
         + t("kb.affected_crops", crops=affected_text)
-        + '</strong></p>'
+        + "</strong></p>"
         '<p style="margin-top:0.5rem;"><strong style="color:var(--text);">'
         + t("kb.favorable_conditions", conditions=favorable)
         + "</strong></p></div>",
