@@ -174,9 +174,38 @@ def _generate(
             system_prompt=system_prompt,
             fallback=True,
         )
-    except Exception as exc:
-        raise AIAssistantError("AI provider failed to generate a response.") from exc
+    except Exception:
+        return _static_fallback(prompt, system_prompt)
     return response.text.strip()
+
+
+def _static_fallback(prompt: str, system_prompt: str) -> str:
+    lower = prompt.lower()
+    if "recommendation" in lower or "management plan" in lower or "actionable" in lower:
+        return (
+            "Management recommendations (static fallback):\n"
+            "- Chemical: Apply recommended fungicide or bactericide per local label; rotate modes of action.\n"
+            "- Organic: Use copper-based or neem oil sprays; ensure full leaf coverage.\n"
+            "- Irrigation: Water at the base; avoid overhead irrigation to reduce humidity.\n"
+            "- Prevention: Remove infected plant material, sanitize tools, and rotate crops.\n"
+            "- Safety: Wear PPE, follow re-entry intervals, and consult a local agronomist."
+        )
+    if "summar" in lower:
+        return "Summary (static fallback): Key points identified; review source text for specific details."
+    if "translat" in lower:
+        return "Translation (static fallback): Content not translatable without an active AI provider."
+    if "explain" in lower or "diagnosis" in lower:
+        return (
+            "Diagnosis explanation (static fallback):\n"
+            "The model detected abnormal symptoms. Inspect leaves for spots, yellowing, or lesions. "
+            "Check soil moisture and recent weather. If symptoms worsen, consult a local extension officer."
+        )
+    if "chat" in lower or "conversation" in lower:
+        return "I'm currently running in offline mode. Please check your AI provider configuration."
+    return (
+        "Response (static fallback):\n"
+        "The AI assistant is unavailable right now. Please verify your Ollama setup or cloud API credentials."
+    )
 
 
 def _with_max_tokens(config: ProviderConfig, max_tokens: int) -> ProviderConfig:
