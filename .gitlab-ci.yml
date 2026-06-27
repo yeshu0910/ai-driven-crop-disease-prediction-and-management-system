@@ -79,8 +79,10 @@ typecheck:
 
 security_secrets:
   stage: security
-  image: zricethezav/gitleaks:latest
+  image: alpine:latest
   needs: []
+  before_script:
+    - apk add --no-cache git gitleaks
   script:
     - gitleaks detect --source . --report-path gitleaks-report.json --report-format json
   artifacts:
